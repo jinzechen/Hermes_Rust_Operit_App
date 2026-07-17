@@ -1,6 +1,83 @@
 [package]
 name = "hermes_rust_operit_app"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+description = "纯 Rust 重构的 Operit Android 应用 — 高性能 AI 助手工具链"
+
+[lib]
+name = "hermes_operit_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "hermes_operit_app"
+path = "src/main.rs"
 
 [dependencies]
+# === Async runtime ===
+tokio = { version = "1", features = ["full"] }
+
+# === Serialization ===
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+
+# === HTTP client ===
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# === OAuth ===
+oauth2 = "4.4"
+
+# === Database ===
+redb = "1"
+
+# === Logging ===
+log = "0.4"
+env_logger = "0.11"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# === Error handling ===
+thiserror = "1"
+anyhow = "1"
+
+# === Async traits ===
+async-trait = "0.1"
+
+# === Misc utilities ===
+uuid = { version = "1", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+parking_lot = "0.12"
+once_cell = "1"
+directories = "5"
+
+# === MCP Protocol (custom implementation, no external SDK) ===
+# MCP JSON-RPC 2.0 over stdio — lightweight, zero-dependency protocol
+
+# === Built-in tools (will be integrated as source modules) ===
+# These are listed here for reference; actual integration varies:
+# - obscura: built as local module (browser automation)
+# - agentic-vision: built as local module (image analysis)
+# - rust_mcp_filesystem: core logic extracted to module
+# - typemill: markdown processing compiled in
+
+# === Filesystem tools ===
+walkdir = "2"
+flate2 = "1"
+regex = "1"
+
+# === UI (Dioxus for Android) ===
+# dioxus = { version = "0.5", features = ["mobile"] }
+# dioxus-mobile = "0.5"
+# NOTE: Uncomment above when building for Android with NDK.
+# For development, UI modules are defined but compiled-out.
+
+# === Sandbox (Linux only) ===
+# seccomp = "0.3"
+# landlock = "0.3"
+# NOTE: Android seccomp requires bionic libc bindings. Platform-gated.
+
+[profile.release]
+lto = true
+opt-level = "s"
+strip = true
+codegen-units = 1
