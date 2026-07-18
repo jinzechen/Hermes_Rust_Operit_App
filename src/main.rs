@@ -51,10 +51,7 @@ fn main() {
     let md_tool = MarkdownTool::new();
     agent.register_tool(Box::new(md_tool));
 
-    log::info!(
-        "Registered {} tools",
-        agent.tool_count()
-    );
+    log::info!("Registered {} tools", agent.tool_count());
 
     // ── CLI mode ────────────────────────────────────────────────────────
     log::info!("Entering CLI mode. Type 'help' for commands, 'quit' to exit.");

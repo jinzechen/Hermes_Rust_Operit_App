@@ -90,7 +90,12 @@ impl StoreBrowser {
                 .and_then(|body| {
                     body.lines()
                         .find(|line| line.trim().starts_with("category:"))
-                        .map(|line| line.trim().trim_start_matches("category:").trim().to_string())
+                        .map(|line| {
+                            line.trim()
+                                .trim_start_matches("category:")
+                                .trim()
+                                .to_string()
+                        })
                 })
                 .unwrap_or_else(|| "general".to_string());
 
