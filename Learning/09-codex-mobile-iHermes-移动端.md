@@ -1,24 +1,31 @@
-# Codex-Mobile + iHermes — 移动 AI Agent 模式
-> codex-mobile: https://github.com/friuns2/codex-mobile
-> iHermes: https://github.com/2winter-dev/iHermes
-> 学习日期：2026-07-18
+# 09 — Codex Mobile + iHermes 移动端 学习报告
 
-## codex-mobile
-- **Termux 运行时**：Android 终端模拟器提供 Linux userspace
-- **Web-first 桥接**：Browser → Express + WebSocket → Codex App Server
-- **Cloudflared 隧道**：公网 URL + QR 码移动接入
-- **电池管理**：wake-lock, 电池优化禁用, 持久通知
+> **Codex Mobile**：https://github.com/friuns2/codex-mobile (778⭐, TypeScript)  
+> **iHermes**：https://github.com/2winter-dev/iHermes (27⭐, TypeScript)  
+> **Hermes 集成现状**：同等定位（Hermes_Rust_Operit_App 就是 Android 上的 AI Agent）
 
-## iHermes
-- **Expo SDK 54**：直接连 Hermes Agent，无后端
-- **SSE 流式**：实时响应
-- **多实例管理**：add/edit/delete/switch agent
-- **expo-secure-store**：API key 平台原生安全存储
+---
 
-## 对 Hermes_Rust_Operit_App 的借鉴
-| 模式 | codex-mobile | iHermes | 推荐 |
-|------|-------------|---------|------|
-| 运行时 | Termux (Node.js) | Native (Expo) | 两者都支持 |
-| 连接 | Cloudflared + LAN | 直连 HTTP | 双模式 |
-| 存储 | Firebase + FS | expo-secure-store | 平台原生安全存储 |
-| API | Codex RPC/WS | OpenAI REST+SSE | OpenAI 兼容优先 |
+## 核心发现
+
+### Codex Mobile
+
+在 Termux 上运行 OpenAI Codex CLI，展示了 Android 上运行 AI Agent 的完整工程方案。
+
+### iHermes
+
+Hermes Agent 的移动端 Web 界面。
+
+## 对 Hermes_Rust_Operit_App 的作用
+
+Hermes_Rust_Operit_App 是**纯 Rust 编译到 Android** 的方案，相比：
+- **Codex Mobile**: 需要 Node.js + Termux（非原生）
+- **iHermes**: 需要 Web 服务器 + 浏览器
+
+Hermes 是**真正的原生 Android AI Agent**（编译为 .so 嵌入 Operit）。
+
+## 三到五个可复用点
+
+1. **Termux 部署模式** — Android 运行 AI CLI 的工程参考
+2. **纯 Rust 优势** — 无需 Node.js，单二进制
+3. **原生 Android** — Operit 插件形式，用户体验更好

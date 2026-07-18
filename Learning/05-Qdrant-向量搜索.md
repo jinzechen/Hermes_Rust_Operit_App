@@ -1,26 +1,58 @@
-# Qdrant 向量搜索 — 学习报告
-> 项目：https://github.com/qdrant/qdrant | Rust 原生向量数据库
-> 学习日期：2026-07-18
+# 05 — Qdrant 向量搜索 深度学习报告
 
-## 核心数据模型
-Collection → Segments → Points (id + vector + payload)
-- HNSW 索引：亚线性 ANN 搜索
-- Payload 索引：过滤 + 搜索融合（单次遍历）
-- 量化：Scalar(4x) / Product / Binary(32x)
-- 分片 + 复制 + Raft 共识
+> **UA Rust 分析时间**：2026-07-18  
+> **项目**：https://github.com/qdrant/qdrant (33,364⭐, Rust)  
+> **核心**：高性能向量数据库（HNSW 索引）  
+> **Hermes 集成现状**：❌ 未集成，但已有 redb KV 存储
 
-## API 设计（统一查询入口）
-POST /collections/{name}/points/query
-{query: [vector], filter: {must/should/must_not}, limit, prefetch: [dense, sparse]}
+---
 
-## 对 Hermes 的整合
-**Proposed Schema**: Collection agent_memory
-Payload: text, summary, agent_id, session_id, type, timestamp, importance, tags
+## 第一步：UA Rust 深度扫描
 
-**四种检索模式**:
-1. 语义召回：query by embedding, filter by agent_id+type
-2. 事实查询：query by embedding, filter by agent_id+type="fact"
-3. 时间加权：filter by timestamp range
-4. 混合搜索：prefetch [dense, sparse], RRF 融合
+```bash
+ua scan analysis/qdrant → 5 文件（含 lib/api Cargo.toml + lib.rs）
+ua build → 9 节点 / 4 边
+```
 
-**整合复杂度**：低。Rust native SDK，单 Docker 命令启动。
+## 第二步：核心发现
+
+### qdrant-client 集成
+
+```toml
+[dependencies]
+qdrant-client = { version = "1.12", features = ["rustls"] }
+```
+
+API 极简：
+
+```rust
+use qdrant_client::Qdrant;
+use qdrant_client::qdrant::SearchPoints;
+
+let client = Qdrant::new("http://localhost:6334")?;
+let results = client
+    .search_points(&SearchPoints {
+        collection_name: "memory".into(),
+        vector: embedding,    // f32 向量
+        limit: 10,
+        with_payload: true,
+        ..Default::default()
+    })
+    .await?;
+```
+
+## 第三步：对 Hermes_Rust_Operit_App 的作用
+
+| 当前 Hermes | 加 qdrant 后 |
+|-------------|-------------|
+| memory 精确 key 匹配 | 语义相似度搜索（向量） |
+| 无向量索引 | HNSW ANN 索引 |
+| 对话线性存储 | 向量+时间混合排序 |
+| 代码分析仅 stdout | 可向量化检索 |
+
+## 第四步：三到五个可复用点
+
+1. **语义记忆** — 替代 memory.rs 的精确 key 匹配
+2. **代码分析索引** — UA Rust 知识图谱节点向量化后检索
+3. **qdrant-client** — 轻量 gRPC 客户端，Android 可用
+4. **混合搜索** — 向量 70% + 标量过滤 30%

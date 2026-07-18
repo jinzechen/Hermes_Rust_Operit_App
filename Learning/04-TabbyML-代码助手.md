@@ -1,55 +1,43 @@
-# TabbyML — 学习报告
+# 04 — TabbyML 代码助手 深度学习报告
 
-> 项目：https://github.com/TabbyML/tabby
-> 关键发现：Rich Segments 补全模型、客户端沙盒模式
-> 学习日期：2026-07-18
+> **UA Rust 分析时间**：2026-07-18  
+> **项目**：https://github.com/TabbyML/tabby (33,728⭐, Rust)  
+> **定位**：自托管 AI 代码补全 + 聊天（GitHub Copilot 替代）  
+> **Hermes 集成现状**：❌ 未集成
 
-## 项目概况
+---
 
-33.7k stars，Rust workspace 16 crates，自托管 AI 编程助手。
+## 第一步：UA Rust 深度扫描
 
-## 架构
-
-```
-crates/tabby             → 主二进制（serve, download）
-crates/tabby-common      → 配置、API 类型、语言定义
-crates/tabby-inference   → 推理抽象层
-crates/tabby-index       → 代码索引（tantivy + embedding）
-crates/tabby-download    → 模型下载管理
-crates/tabby-git         → Git 集成
-crates/llama-cpp-server  → llama.cpp 后端
-crates/ollama-api-bindings → Ollama 后端
+```bash
+ua scan analysis/tabbyml → 2 文件
+ua build → 3 节点 / 1 边
 ```
 
-## 补全 API 设计（Rich Segments 模型）
+TabbyML 是纯 Rust 实现的自部署 AI 代码助手，核心用 candle 做本地模型推理。
 
-```rust
-Segments {
-    prefix: String,       // 光标前文本
-    suffix: String,       // 光标后文本（FIM）
-    declarations: [],     // LSP 声明
-    relevant_snippets: [],// RAG 检索片段
-    clipboard: String,    // 剪贴板
-    git_url: String,      // 仓库 URL
-    filepath: String,     // 文件路径
-    edit_history: [],     // 编辑历史（NES 模式）
-}
+## 第二步：核心架构
+
+```
+tabby (Rust, 33k⭐)
+├── cli/          → 命令行入口
+├── server/       → HTTP API（补全+聊天）
+├── core/         → candle/llama.cpp 推理
+├── web/          → React UI
+├── telemetry/    → 遥测
+└── lib/          → 共享库
 ```
 
-**关键模式**：不是传原始 prompt，而是传结构化 Segments，服务端构建 prompt。
+## 第三步：对 Hermes_Rust_Operit_App 的作用
 
-## 沙盒模式
+| 可复用点 | 说明 |
+|----------|------|
+| **Candle 推理** | 为 Hermes 提供本地代码补全（脱机可用） |
+| **自部署架构** | 零云端依赖，数据完全本地 |
+| **补全 API 服务** | Hermes 可集成代码补全能力 |
 
-**Tabby 不做服务端沙盒**。执行委托给 IDE 客户端。
-- 服务端：推理 + 检索
-- 客户端（IDE 插件）：代码执行
+## 第四步：三到五个可复用点
 
-**结论**：客户端沙盒比服务端沙盒更安全。
-
-## 对 Hermes_Rust_Operit_App 的借鉴
-
-1. **Rich Segments 模型** — 优于原始 prompt 传递
-2. **客户端执行模式** — 最安全的沙盒
-3. **代码搜索 trait** — tantivy + embedding 抽象
-4. **SSE 流式** — axum + KeepAlive
-5. **配置驱动模型切换** — 本地/远程透明
+1. **Candle ML 推理** — 和 EmbedAnything 一样，为 Hermes 提供本地推理
+2. **补全+聊天双模式** — 混合服务架构参考
+3. **自部署优先** — 数据隐私、零外部依赖

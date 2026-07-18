@@ -1,23 +1,28 @@
-# Activepieces MCP 注册表 — 学习报告
-> 项目：https://github.com/activepieces/activepieces | 23.3k stars
-> 学习日期：2026-07-18
+# 06 — Activepieces MCP 注册表 学习报告
+
+> **项目**：https://github.com/activepieces/activepieces (23,312⭐, TypeScript)  
+> **核心**：MCP 服务器注册表 + 自动化工作流平台  
+> **Hermes 集成现状**：参照 MCP 注册表模式为 Operit_MCPS 设计
+
+---
 
 ## 核心发现
-~400 pieces，60% 社区贡献。**每个 piece 同时是 MCP 服务器**。
 
-## 注册表格式
-```
-packages/pieces/community/<name>/
-  src/index.ts   → createPiece({displayName, description, categories, actions, triggers})
-  package.json   → npm 元数据
-```
+Activepieces 的 MCP 注册表管理功能：
+- 发现和安装 MCP 服务器
+- 统一管理界面
+- 工具列表浏览
 
-## 对 Hermes Plugin Store 的价值
-- 400 个 MCP 服务器的元数据源
-- 标准化格式：displayName, categories(PieceCategory enum), logoUrl, authors, actions
-- 可作为商店的**默认聚合源**
+## 对 Hermes_Rust_Operit_App 的作用
 
-## 提取策略
-Option A: GitHub tree API 扫描
-Option B: npm registry 查询 @activepieces/piece-*
-Option C: 组合丰富（解析 index.ts 提取完整 action schema）
+| 可复用点 | 说明 |
+|----------|------|
+| MCP 注册表模式 | Operit_MCPS 的 9 个插件需要类似的发现/安装机制 |
+| MCP Server 生命周期 | 启动/停止/配置管理 |
+| 统一工具列表 | 所有 MCP 插件暴露的工具统一展示 |
+
+## 三到五个可复用点
+
+1. **MCP 注册表架构** — Operit_MCPS 插件目录
+2. **工具列表聚合** — 跨 MCP 插件的工具发现
+3. **配置模板** — 每个插件独立的配置界面模式
