@@ -1,117 +1,176 @@
-# 04 — Understand_Anything_Rust：代码分析引擎源码分析
+# 04 — Understand_Anything_Rust：代码分析引擎源码深度分析
 
 > **仓库**：https://github.com/jinzechen/Understand_Anything_Rust (用户自建, Rust)  
-> **UA Rust 自分析数据**：1,641 nodes / 1,623 edges / 3 layers / 28 Rust 文件  
-> **Hermes_Rust_Operit_App 评分**：★★★★★（已集成，核心分析工具，本报告即用它生成）
+> **UA Rust 自分析**：1,641 nodes / 1,623 edges / 3 layers / 28 Rust 文件  
+> **Hermes_Rust_Operit_App 评分**：★★★★★（已通过 path dep 集成）
 
 ---
 
-## 一、源码结构（UA Rust 自分析）
+## 一、源码结构（从实际源码读出来的）
 
 ```
-Understand_Anything_Rust/
-├── crates/
-│   ├── ua-core/       → 核心库（扫描/解析/图谱/报告）
-│   │   ├── src/
-│   │   │   ├── lib.rs          (1,731行)  — 引擎入口
-│   │   │   ├── scanner.rs      — 文件扫描 (30+ 语言)
-│   │   │   ├── parser/         — 源码解析器
-│   │   │   ├── graph.rs        — 知识图谱构建 (21节点×35边)
-│   │   │   ├── report.rs       (915行)  — HTML/MD 报告生成
-│   │   │   ├── dashboard.rs    — D3.js 交互式仪表盘
-│   │   │   ├── incremental.rs  — Blake3 增量更新
-│   │   │   ├── types.rs        — 类型系统
-│   │   │   └── agent.rs        — Agent 分派
-│   │   └── Cargo.toml
-│   ├── ua-cli/        → CLI 命令行
-│   │   └── src/main.rs (326行) — scan/parse/build/json 4 命令
-│   └── ua-mcp/        → MCP 服务器
-│       └── src/main.rs — JSON-RPC stdio MCP
+crates/ua-core/src/
+├── lib.rs          (1,731行) — 引擎入口，pub mod 声明
+├── scanner.rs      (1个pub函数) — 文件扫描
+├── parser/
+│   └── mod.rs      — 解析器注册
+├── graph.rs        (6个pub函数) — 知识图谱构建
+├── report.rs       (26个函数) — HTML/MD 报告
+├── dashboard.rs    — D3.js 仪表盘
+├── incremental.rs  — Blake3 指纹
+├── types.rs        (28个类型) — 所有数据结构
+└── agent.rs        — Agent 分派
+
+crates/ua-cli/src/main.rs (326行) — CLI 入口
+crates/ua-mcp/src/main.rs — MCP 服务器
 ```
 
 ---
 
-## 二、核心实现
+## 二、核心数据结构（types.rs）
 
-### 扫描器（scanner.rs）
+### 28 个类型定义
 
-```rust
-pub fn scan_project(root: &Path) -> Result<ScanResult> {
-    // 1. walkdir 遍历文件
-    // 2. 按扩展名分类语言（30+ 种）
-    // 3. 排除 .gitignore / target/
-    // 4. 返回 ScanResult { files: [...], stats: {...} }
-}
 ```
-
-### 解析器（parser/）
-
-```rust
-pub struct ParserRegistry {
-    // Rust 解析器用 regex（无需 tree-sitter）
-    // 提取: 函数 / 结构体 / trait / impl / 导入
-}
-
-pub fn parse(path: &Path) -> Result<ParsedFile> {
-    // 1. 按扩展名选择解析器
-    // 2. regex 提取 definitions + imports
-    // 3. 返回 ParsedFile { definitions: [...], imports: [...] }
-}
-```
-
-### 知识图谱构建（graph.rs）
-
-```rust
-pub fn build_graph(root: &Path, scan: &ScanResult, parsed: &[ParsedFile]) -> KnowledgeGraph {
-    // 21 种节点类型: File, Function, Struct, Trait, Module, Directory...
-    // 35 种边类型: Contains, Imports, Calls, Defines, Extends...
-    // 分层: 按目录结构自动分层
-    // 导览: 自动生成学习路径
-}
-```
-
-### 报告生成（report.rs, 915 行）
-
-```rust
-pub fn to_html(graph: &KnowledgeGraph) -> String  // D3.js 交互仪表盘
-pub fn to_markdown(graph: &KnowledgeGraph) -> String  // 人机可读
-// 内部包含: html_header / html_section_overview / html_section_layers
-//          html_section_file_inventory / html_section_imports
-//          md_title / md_section_overview / md_section_layers ...
+NodeType (enum, 12种) → File | Directory | Function | Struct | Trait | Impl | Module | ...
+EdgeType (enum, 8种)  → Contains | Imports | Calls | Defines | Extends | ...
+GraphNode (struct)    → id / node_type / file_path / summary / complexity / line_count
+GraphEdge (struct)    → source / target / edge_type / label
+Layer (struct)        → name / description / node_ids
+TourStep (struct)     → title / description / node_ids
+KnowledgeGraph (struct) → project / nodes / edges / layers / tour
+ScanEntry (struct)    → path / file_category / language / line_count
+ScanResult (struct)   → files / total_files / stats
 ```
 
 ---
 
-## 三、三种输出格式
+## 三、core 模块实现细节
 
-| 输出 | 代码路径 | 内容 |
-|------|---------|------|
-| JSON | serde_json 序列化 | 完整知识图谱 nodes/edges/layers/tour |
-| HTML | dashboard.rs + D3.js | 交互式力导向图 + 搜索 + 过滤 + 导航 |
-| MD | report.rs markdown 函数 | 分层结构 + 文件清单 + 导入图 + 导览 |
+### scanner.rs：1 个 pub 函数扫描整个项目
+
+```rust
+pub fn scan_project(root: &Path) -> anyhow::Result<ScanResult> {
+    // 1. walkdir 递归遍历 root 下所有文件
+    // 2. 按扩展名映射到 30+ 种语言
+    // 3. 排除 .gitignore / target/ / node_modules
+    // 4. 统计每种语言的文件数
+    // 5. 返回 ScanResult { files: Vec<ScanEntry>, stats: ScanStats }
+}
+```
+
+### graph.rs：6 个 pub 函数构建知识图谱
+
+```rust
+pub fn build_graph(root, scan, parsed) -> KnowledgeGraph
+    // 入口函数，调用下方所有函数组装 KnowledgeGraph
+
+pub fn file_category_to_node_type(category) -> NodeType
+    // 文件分类→图谱节点类型映射
+
+pub fn build_directory_edges(scan) -> Vec<GraphEdge>
+    // 目录→文件的 Contains 边
+
+pub fn build_import_edges(parsed) -> Vec<GraphEdge>
+    // 文件间的 Imports 边
+
+pub fn build_layers(nodes) -> Vec<Layer>
+    // 自动分层：按节点类型分 Core/Config/Docs
+
+pub fn build_tour(nodes) -> Vec<TourStep>
+    // 自动生成学习导览路径
+```
+
+### report.rs：26 个函数生成 HTML + MD
+
+```
+HTML 生成:
+  to_html(graph) → 完整 HTML 仪表盘（调用 dashboard::generate）
+  to_html_static(graph) → 无 JS 静态 HTML
+  内部: html_header / html_footer / html_section_overview
+        html_section_layers / html_section_file_inventory
+        html_section_imports / html_section_dependency_tree
+        html_section_tour / html_node_ref / render_html_tree
+  
+MD 生成:
+  to_markdown(graph) → 完整 Markdown 报告
+  内部: md_title / md_section_overview / md_section_layers
+        md_section_file_inventory / md_section_imports
+        md_section_dependency_tree / md_section_tour / render_md_tree
+```
 
 ---
 
-## 四、对 Hermes_Rust_Operit_App 的集成
-
-### 已集成
+## 四、4 个命令行的实现（ua-cli/src/main.rs, 326行）
 
 ```rust
-// Cargo.toml
-ua-core = { path = "../Understand_Anything_Rust/crates/ua-core" }
+fn main() {
+    match cmd {
+        "scan"  → scan_project() + 打印摘要
+        "parse" → scan → parse 每个文件 + 打印 defs/imports 数
+        "build" → cmd_build() → scan → parse → build_graph → write_output
+        "json"  → scan_project() → serde_json::to_string_pretty
+    }
+}
 
+fn cmd_build(root, flags, args):
+    format = parse_format_flag(args)   // --format html|md|json
+    if incremental: build_incremental()
+    else: build_full()
+
+fn build_full():
+    1. scan_project()
+    2. ParserRegistry::default().parse() 每个文件
+    3. build_graph()
+    4. compute_fingerprints() → 写 meta.json
+    5. write_output() → HTML/MD/JSON
+
+fn build_incremental():
+    1. 读老 meta.json
+    2. scan_project()
+    3. compute_fingerprints() vs 老指纹 → 找出变更文件
+    4. 全量重分析（保证拓扑正确）
+    5. 更新 meta.json
+    6. write_output()
+```
+
+---
+
+## 五、三种输出格式代码路径
+
+```rust
+fn write_output(root, graph, format, output_arg) {
+    match format {
+        "html" → to_html(graph) → 文件 → ".understand-anything/report.html"
+        "md"   → to_markdown(graph) → 文件 → ".understand-anything/report.md"
+        _      → serde_json::to_string_pretty → 文件 → ".understand-anything/knowledge-graph.json"
+    }
+}
+```
+
+---
+
+## 六、对 Hermes_Rust_Operit_App 的集成
+
+### 已集成（codebase_analyzer.rs）
+
+```rust
 // tools/codebase_analyzer.rs
-use ua_core::{scanner, parser, graph};
+// 直接调用 ua-core 的三个步骤：
+let scan = ua_core::scanner::scan_project(path)?;
+let registry = ua_core::parser::ParserRegistry::default();
+let graph = ua_core::graph::build_graph(path, &scan, &parsed);
+// 输出 JSON/HTML/MD
 ```
 
-### 可扩展
+### 可改进点
 
-| 能力 | 当前状态 | 可改进 |
-|------|---------|--------|
-| 知识图谱存储 | 仅 stdout | → 存入 redb/qdrant |
-| Agent 主动分析 | 手动触发 | → 自动分析当前项目 |
-| 增量更新 | Blake3 指纹 | → 自动检测变更 |
+| 能力 | 当前 | 目标 |
+|------|------|------|
+| 分析结果存储 | stdout → 丢失 | → 存入 redb GraphStore |
+| Agent 触发 | 手动 | → 对话中自动"分析当前项目" |
+| 增量分析 | Blake3 已实现 | → 自动检测变更 |
 
 ### 评分：★★★★★
 
-UA Rust 是 Hermes_Rust_Operit_App 的**代码理解能力核心**。本报告的所有 UA 分析数据（700 nodes、18 crates、函数签名等）都由它生成。
+UA Rust 是这套学习系统的核心工具。本报告所有分析数据都由其生成。已作为 `ua-core` path dep 集成在 Hermes_Rust_Operit_App 中。
