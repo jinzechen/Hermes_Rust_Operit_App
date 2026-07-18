@@ -61,6 +61,7 @@ struct JsonRpcError {
 
 /// Result of the `initialize` handshake.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InitializeResult {
     pub protocol_version: String,
     pub capabilities: ServerCapabilities,

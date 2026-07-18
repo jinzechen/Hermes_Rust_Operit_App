@@ -1,11 +1,211 @@
 use anyhow::{anyhow, Context, Result};
 use async_trait::async_trait;
+use moka::future::Cache;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::config::AppConfig;
 
+// ── TaskType ────────────────────────────────────────────────────────────────
+
+/// Classification of the user's task, used by SmartModelRouter to pick
+/// the best model / strategy for each request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum TaskType {
+    /// Compilation, build-script assistance, linker errors.
+    Compile,
+    /// Code review, style checks, correctness analysis.
+    CodeReview,
+    /// Generating documentation, doc-comments, READMEs.
+    Documentation,
+    /// General conversation / Q&A.
+    Chat,
+    /// Deep research, multi-step reasoning, data analysis.
+    Research,
+}
+
+impl TaskType {
+    /// Heuristic classification from the user's message text.
+    pub fn classify(message: &str) -> Self {
+        let lower = message.to_lowercase();
+        if lower.contains("compile")
+            || lower.contains("build")
+            || lower.contains("linker")
+            || lower.contains("cargo build")
+            || lower.contains("compilation")
+        {
+            TaskType::Compile
+        } else if lower.contains("review")
+            || lower.contains("audit")
+            || lower.contains("lint")
+            || lower.contains("refactor")
+        {
+            TaskType::CodeReview
+        } else if lower.contains("document")
+            || lower.contains("readme")
+            || lower.contains("doc comment")
+            || lower.contains("javadoc")
+        {
+            TaskType::Documentation
+        } else if lower.contains("research")
+            || lower.contains("analyze")
+            || lower.contains("deep dive")
+            || lower.contains("investigate")
+        {
+            TaskType::Research
+        } else {
+            TaskType::Chat
+        }
+    }
+}
+
+// ── SmartModelRouter ────────────────────────────────────────────────────────
+
+/// Routes requests to the most appropriate model / parameters based on
+/// the detected TaskType. Uses a moka in-memory cache to avoid
+/// re-classification of identical prompts.
+pub struct SmartModelRouter {
+    /// Caches TaskType classifications keyed by a hash of the message text.
+    classification_cache: Cache<u64, TaskType>,
+    /// Caches routing decisions (model override strings) for fast lookup.
+    routing_cache: Cache<TaskType, RouteDecision>,
+}
+
+/// The result of routing a request — may suggest a model override.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RouteDecision {
+    /// If Some, use this model name instead of the one in AppConfig.
+    pub model_override: Option<String>,
+    /// If Some, override the default temperature.
+    pub temperature_override: Option<f32>,
+    /// If Some, override the default max_tokens.
+    pub max_tokens_override: Option<u32>,
+}
+
+impl Default for RouteDecision {
+    fn default() -> Self {
+        Self {
+            model_override: None,
+            temperature_override: None,
+            max_tokens_override: None,
+        }
+    }
+}
+
+impl SmartModelRouter {
+    /// Create a new router with default caches.
+    pub fn new() -> Self {
+        Self {
+            classification_cache: Cache::builder()
+                .max_capacity(10_000)
+                .time_to_live(std::time::Duration::from_secs(600))
+                .build(),
+            routing_cache: Cache::builder()
+                .max_capacity(100)
+                .time_to_live(std::time::Duration::from_secs(3600))
+                .build(),
+        }
+    }
+
+    /// Create a router with custom cache sizes.
+    pub fn with_cache_sizes(
+        classification_max: u64,
+        routing_max: u64,
+    ) -> Self {
+        Self {
+            classification_cache: Cache::builder()
+                .max_capacity(classification_max)
+                .time_to_live(std::time::Duration::from_secs(600))
+                .build(),
+            routing_cache: Cache::builder()
+                .max_capacity(routing_max)
+                .time_to_live(std::time::Duration::from_secs(3600))
+                .build(),
+        }
+    }
+
+    /// Route a user message: classify → look up or compute routing decision.
+    pub async fn route(&self, message: &str) -> RouteDecision {
+        let hash = Self::hash_message(message);
+        let task_type = self
+            .classification_cache
+            .get_with(hash, async { TaskType::classify(message) })
+            .await;
+
+        self.routing_cache
+            .get_with(task_type, async { Self::decide(task_type) })
+            .await
+    }
+
+    /// Compute the routing decision for a given TaskType.
+    fn decide(task_type: TaskType) -> RouteDecision {
+        match task_type {
+            TaskType::Compile => RouteDecision {
+                temperature_override: Some(0.1),
+                max_tokens_override: Some(2048),
+                ..Default::default()
+            },
+            TaskType::CodeReview => RouteDecision {
+                temperature_override: Some(0.2),
+                max_tokens_override: Some(4096),
+                ..Default::default()
+            },
+            TaskType::Documentation => RouteDecision {
+                temperature_override: Some(0.3),
+                max_tokens_override: Some(8192),
+                ..Default::default()
+            },
+            TaskType::Chat => RouteDecision {
+                temperature_override: Some(0.7),
+                ..Default::default()
+            },
+            TaskType::Research => RouteDecision {
+                temperature_override: Some(0.4),
+                max_tokens_override: Some(16384),
+                ..Default::default()
+            },
+        }
+    }
+
+    /// Simple non-cryptographic hash for message dedup in the cache.
+    fn hash_message(msg: &str) -> u64 {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut h = DefaultHasher::new();
+        msg.hash(&mut h);
+        h.finish()
+    }
+
+    /// Manually insert a routing decision into the cache.
+    pub async fn set_route(&self, task_type: TaskType, decision: RouteDecision) {
+        self.routing_cache.insert(task_type, decision).await;
+    }
+
+    /// Clear all cached data.
+    pub fn clear(&self) {
+        self.classification_cache.invalidate_all();
+        self.routing_cache.invalidate_all();
+    }
+}
+
+impl Default for SmartModelRouter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // ── Public types ────────────────────────────────────────────────────────────
+
+/// Token usage statistics returned by the LLM provider.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TokenUsage {
+    /// Number of tokens in the prompt (input).
+    pub prompt_tokens: u32,
+    /// Number of tokens in the completion (output).
+    pub completion_tokens: u32,
+    /// Total tokens consumed.
+    pub total_tokens: u32,
+}
 
 /// A single tool call the LLM wants the agent to execute.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -22,6 +222,8 @@ pub struct LlmResponse {
     pub content: Option<String>,
     /// Tool calls the LLM wants the agent to execute.
     pub tool_calls: Vec<ToolCall>,
+    /// Token usage information (if available from the provider).
+    pub token_usage: Option<TokenUsage>,
 }
 
 // ── Provider trait ──────────────────────────────────────────────────────────
@@ -73,6 +275,16 @@ impl GenericProvider {
 
         body
     }
+
+    /// Extract token usage from an OpenAI-format response body.
+    fn parse_usage(resp_body: &Value) -> Option<TokenUsage> {
+        let usage = resp_body.get("usage")?;
+        Some(TokenUsage {
+            prompt_tokens: usage.get("prompt_tokens")?.as_u64()? as u32,
+            completion_tokens: usage.get("completion_tokens")?.as_u64()? as u32,
+            total_tokens: usage.get("total_tokens")?.as_u64()? as u32,
+        })
+    }
 }
 
 impl Default for GenericProvider {
@@ -115,6 +327,9 @@ impl LlmProvider for GenericProvider {
             ));
         }
 
+        // Parse token usage
+        let token_usage = Self::parse_usage(&resp_body);
+
         // Parse OpenAI response format:
         // { "choices": [ { "message": { "content": ..., "tool_calls": [...] } } ] }
         let choice = resp_body["choices"]
@@ -152,6 +367,7 @@ impl LlmProvider for GenericProvider {
         Ok(LlmResponse {
             content,
             tool_calls,
+            token_usage,
         })
     }
 }
@@ -210,7 +426,7 @@ impl AnthropicProvider {
                     _ => "user",
                 };
 
-                let mut content: Value;
+                let content: Value;
 
                 if role == "tool" {
                     // Anthropic expects tool results as user messages with tool_result blocks
@@ -266,6 +482,20 @@ impl AnthropicProvider {
         }
 
         (anthropic_msgs, system_prompt)
+    }
+
+    /// Extract token usage from an Anthropic-format response body.
+    fn parse_usage(resp_body: &Value) -> Option<TokenUsage> {
+        let usage = resp_body.get("usage")?;
+        Some(TokenUsage {
+            prompt_tokens: usage
+                .get("input_tokens")
+                .and_then(|v| v.as_u64())? as u32,
+            completion_tokens: usage
+                .get("output_tokens")
+                .and_then(|v| v.as_u64())? as u32,
+            total_tokens: 0, // Anthropic doesn't always give total; compute it
+        })
     }
 }
 
@@ -336,6 +566,9 @@ impl LlmProvider for AnthropicProvider {
             ));
         }
 
+        // Parse token usage
+        let token_usage = Self::parse_usage(&resp_body);
+
         // Parse Anthropic response: { "content": [ { "type": "text", "text": "..." }, ... ] }
         let content_blocks = resp_body["content"].as_array();
         let mut text_content = String::new();
@@ -376,6 +609,7 @@ impl LlmProvider for AnthropicProvider {
         Ok(LlmResponse {
             content,
             tool_calls,
+            token_usage,
         })
     }
 }

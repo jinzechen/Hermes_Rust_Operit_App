@@ -24,12 +24,6 @@ serde_yaml = "0.9"
 # === Code Analysis (Understand_Anything_Rust) ===
 ua-core = { path = "../Understand_Anything_Rust/crates/ua-core" }
 
-# === HTTP client ===
-reqwest = { version = "0.12", features = ["json", "blocking", "rustls-tls"], default-features = false }
-
-# === OAuth ===
-oauth2 = { version = "4.4", features = ["reqwest"] }
-
 # === Database ===
 redb = "1"
 
@@ -67,6 +61,14 @@ directories = "5"
 walkdir = "2"
 flate2 = "1"
 regex = "1"
+moka = { version = "0.12.15", features = ["future", "sync"] }
+scraper = "0.27.0"
+sha2 = "0.10"
+rmcp = "2.2.0"
+hermes-core = { git = "https://github.com/Lumio-Research/hermes-agent-rs", version = "0.1.1" }
+tantivy = { version = "0.26.1", default-features = false, features = ["mmap"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "blocking", "native-tls"] }
+oauth2 = { version = "4.4", default-features = false, features = ["reqwest"] }
 
 # === UI (Dioxus for Android) ===
 # dioxus = { version = "0.5", features = ["mobile"] }

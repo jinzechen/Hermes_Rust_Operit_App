@@ -6,9 +6,15 @@ pub mod browser;
 pub mod vision;
 pub mod markdown;
 pub mod codebase_analyzer;
+pub mod web;
+pub mod terminal;
+pub mod speech;
 
 pub use filesystem::FileSystemTool;
 pub use browser::BrowserTool;
 pub use vision::VisionTool;
 pub use markdown::MarkdownTool;
 pub use codebase_analyzer::CodebaseAnalyzer;
+pub use web::WebTool;
+pub use terminal::TerminalTool;
+pub use speech::SpeechTool;

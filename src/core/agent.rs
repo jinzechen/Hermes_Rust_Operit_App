@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Result};
 use parking_lot::RwLock;
@@ -8,7 +9,7 @@ use tokio::runtime::Runtime;
 
 use super::config::AppConfig;
 use super::memory::Message;
-use super::provider::{GenericProvider, LlmProvider, LlmResponse, ToolCall};
+use super::provider::{GenericProvider, LlmProvider, LlmResponse, TokenUsage, ToolCall};
 use super::tool_registry::{ToolHandler, ToolRegistry};
 
 // ── AgentResponse ───────────────────────────────────────────────────────────
@@ -22,6 +23,17 @@ pub struct AgentResponse {
     pub tool_calls: Vec<ToolCall>,
     /// The session ID that was used.
     pub session_id: String,
+    /// Aggregated token usage across all LLM calls in this agent loop.
+    pub token_usage: Option<TokenUsage>,
+}
+
+// ── Session metadata ────────────────────────────────────────────────────────
+
+/// Metadata tracked per session for timeout-based cleanup.
+#[derive(Debug, Clone)]
+struct SessionMeta {
+    /// Timestamp of the last activity in this session.
+    last_active: Instant,
 }
 
 // ── AgentManager ────────────────────────────────────────────────────────────
@@ -32,7 +44,13 @@ pub struct AgentManager {
     provider: Box<dyn LlmProvider>,
     tool_registry: Arc<RwLock<ToolRegistry>>,
     sessions: Arc<Mutex<HashMap<String, Vec<Message>>>>,
+    /// Per-session timestamps for timeout tracking.
+    session_meta: Arc<Mutex<HashMap<String, SessionMeta>>>,
     runtime: Runtime,
+    /// Maximum number of agent-loop iterations before forced exit.
+    max_iterations: usize,
+    /// Sessions idle longer than this are candidates for cleanup.
+    session_timeout: Duration,
 }
 
 impl AgentManager {
@@ -45,8 +63,32 @@ impl AgentManager {
             provider: Box::new(GenericProvider::new()),
             tool_registry: Arc::new(RwLock::new(ToolRegistry::new())),
             sessions: Arc::new(Mutex::new(HashMap::new())),
+            session_meta: Arc::new(Mutex::new(HashMap::new())),
             runtime,
+            max_iterations: 20,
+            session_timeout: Duration::from_secs(3600), // 1 hour default
         })
+    }
+
+    /// Set the maximum number of agent-loop iterations before forced exit.
+    pub fn set_max_iterations(&mut self, max: usize) {
+        self.max_iterations = max;
+    }
+
+    /// Get the current max_iterations value.
+    pub fn max_iterations(&self) -> usize {
+        self.max_iterations
+    }
+
+    /// Set the session timeout duration. Sessions idle longer than this will
+    /// be removed when `clean_expired_sessions()` is called.
+    pub fn set_session_timeout(&mut self, timeout: Duration) {
+        self.session_timeout = timeout;
+    }
+
+    /// Get the current session timeout duration.
+    pub fn session_timeout(&self) -> Duration {
+        self.session_timeout
     }
 
     /// Replace the LLM provider (e.g. switch to Anthropic).
@@ -68,7 +110,7 @@ impl AgentManager {
     pub fn send_message(&self, session_id: &str, text: &str) -> Result<AgentResponse> {
         let user_msg = Message::new("user", text);
 
-        // Append the user message to the session history.
+        // Append the user message to the session history and bump activity.
         {
             let mut sessions = self
                 .sessions
@@ -76,6 +118,18 @@ impl AgentManager {
                 .map_err(|e| anyhow!("Session lock poisoned: {}", e))?;
             let history = sessions.entry(session_id.to_string()).or_default();
             history.push(user_msg);
+
+            // Track / update session activity timestamp.
+            let mut meta = self
+                .session_meta
+                .lock()
+                .map_err(|e| anyhow!("Session meta lock poisoned: {}", e))?;
+            meta.insert(
+                session_id.to_string(),
+                SessionMeta {
+                    last_active: Instant::now(),
+                },
+            );
         }
 
         // Run the agent loop on the tokio runtime.
@@ -83,14 +137,50 @@ impl AgentManager {
             .block_on(async { self.agent_loop(session_id).await })
     }
 
+    /// Remove sessions that have been idle longer than `session_timeout`.
+    /// Returns the number of sessions that were cleaned up.
+    pub fn clean_expired_sessions(&self) -> Result<usize> {
+        let now = Instant::now();
+        let timeout = self.session_timeout;
+
+        let expired_ids: Vec<String> = {
+            let meta = self
+                .session_meta
+                .lock()
+                .map_err(|e| anyhow!("Session meta lock poisoned: {}", e))?;
+            meta.iter()
+                .filter(|(_, m)| now.duration_since(m.last_active) > timeout)
+                .map(|(id, _)| id.clone())
+                .collect()
+        };
+
+        let count = expired_ids.len();
+
+        if count > 0 {
+            let mut sessions = self
+                .sessions
+                .lock()
+                .map_err(|e| anyhow!("Session lock poisoned: {}", e))?;
+            let mut meta = self
+                .session_meta
+                .lock()
+                .map_err(|e| anyhow!("Session meta lock poisoned: {}", e))?;
+            for id in &expired_ids {
+                sessions.remove(id);
+                meta.remove(id);
+            }
+        }
+
+        Ok(count)
+    }
+
     /// Internal agent loop: send messages, handle tool calls, repeat.
     async fn agent_loop(&self, session_id: &str) -> Result<AgentResponse> {
-        const MAX_ITERATIONS: usize = 20;
-
         let mut all_tool_calls: Vec<ToolCall> = Vec::new();
         let mut final_content = String::new();
+        let mut total_token_usage = TokenUsage::default();
 
-        for _iteration in 0..MAX_ITERATIONS {
+        for _iteration in 0..self.max_iterations {
             // Build the message list from session history.
             let messages = self.build_messages(session_id)?;
             let tool_schemas = self.build_tool_schemas();
@@ -100,6 +190,13 @@ impl AgentManager {
                 .provider
                 .chat_completion(messages, tool_schemas, &self.config)
                 .await?;
+
+            // Accumulate token usage.
+            if let Some(ref usage) = response.token_usage {
+                total_token_usage.prompt_tokens += usage.prompt_tokens;
+                total_token_usage.completion_tokens += usage.completion_tokens;
+                total_token_usage.total_tokens += usage.total_tokens;
+            }
 
             // If there's content, record it (last content wins as the final answer).
             if let Some(ref content) = response.content {
@@ -141,10 +238,20 @@ impl AgentManager {
             }
         }
 
+        let token_usage = if total_token_usage.total_tokens > 0
+            || total_token_usage.prompt_tokens > 0
+            || total_token_usage.completion_tokens > 0
+        {
+            Some(total_token_usage)
+        } else {
+            None
+        };
+
         Ok(AgentResponse {
             content: final_content,
             tool_calls: all_tool_calls,
             session_id: session_id.to_string(),
+            token_usage,
         })
     }
 
@@ -208,7 +315,7 @@ impl AgentManager {
         } else {
             // For tool-call-bearing messages we need to embed the tool calls.
             // We'll encode them in a way the provider layer can decode.
-            let mut msg = Message::new("assistant", content);
+            let msg = Message::new("assistant", content);
             // We can't add extra fields to Message easily, so we encode
             // tool calls in a structured way in the content for now.
             // A more robust approach would use a richer message type.
@@ -234,5 +341,17 @@ impl AgentManager {
     pub fn list_tool_names(&self) -> Vec<String> {
         let registry = self.tool_registry.read();
         registry.list_all()
+    }
+
+    /// Return the number of active sessions.
+    pub fn session_count(&self) -> usize {
+        let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        sessions.len()
+    }
+
+    /// Check whether a given session exists.
+    pub fn has_session(&self, session_id: &str) -> bool {
+        let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        sessions.contains_key(session_id)
     }
 }
