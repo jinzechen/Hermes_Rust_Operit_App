@@ -1,0 +1,559 @@
+{
+  "version": "0.1.0",
+  "kind": "codebase",
+  "project": {
+    "name": "fabric",
+    "languages": [
+      "go",
+      "json",
+      "markdown",
+      "unknown"
+    ],
+    "frameworks": [],
+    "description": "fabric project with 16 files across 4 languages. Complexity: Simple.",
+    "analyzed_at": "2026-07-18T11:32:51Z",
+    "git_commit_hash": "unknown"
+  },
+  "nodes": [
+    {
+      "id": "372ad266bc48ad4f",
+      "type": "file",
+      "name": "main",
+      "file_path": "cmd/fabric/main.go",
+      "summary": "go (18 lines)",
+      "tags": [
+        "go"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "de3016eeba5ddef0",
+      "type": "document",
+      "name": "system",
+      "file_path": "data/patterns/create_conceptmap/system.md",
+      "summary": "markdown (151 lines)",
+      "tags": [
+        "markdown"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "0763ce31103ebd1a",
+      "type": "document",
+      "name": "system",
+      "file_path": "data/patterns/raw_query/system.md",
+      "summary": "markdown (13 lines)",
+      "tags": [
+        "markdown"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "dafa65885f3507f2",
+      "type": "document",
+      "name": "system",
+      "file_path": "data/patterns/summarize/system.md",
+      "summary": "markdown (26 lines)",
+      "tags": [
+        "markdown"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "8100f5f1a616c02a",
+      "type": "document",
+      "name": "user",
+      "file_path": "data/patterns/summarize/user.md",
+      "summary": "markdown (0 lines)",
+      "tags": [
+        "markdown"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "d862e4b3cfee5662",
+      "type": "config",
+      "name": "aot",
+      "file_path": "data/strategies/aot.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "3f229b652402e951",
+      "type": "config",
+      "name": "cod",
+      "file_path": "data/strategies/cod.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "5a503666c8f5acd2",
+      "type": "config",
+      "name": "cot",
+      "file_path": "data/strategies/cot.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "89c20da4fc3ba002",
+      "type": "config",
+      "name": "ltm",
+      "file_path": "data/strategies/ltm.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "886a3475fd369e66",
+      "type": "config",
+      "name": "reflexion",
+      "file_path": "data/strategies/reflexion.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "2e269b52b4b97c99",
+      "type": "config",
+      "name": "self-consistent",
+      "file_path": "data/strategies/self-consistent.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "92f5d4ed217838b0",
+      "type": "config",
+      "name": "self-refine",
+      "file_path": "data/strategies/self-refine.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "2260c76f02c3cd76",
+      "type": "config",
+      "name": "standard",
+      "file_path": "data/strategies/standard.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "8cf30db3f03211f0",
+      "type": "config",
+      "name": "tot",
+      "file_path": "data/strategies/tot.json",
+      "summary": "json (4 lines)",
+      "tags": [
+        "json"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "33ef32bf6c23acb9",
+      "type": "file",
+      "name": "go",
+      "file_path": "go.mod",
+      "summary": "unknown (169 lines)",
+      "tags": [
+        "unknown"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "b335630551682c19",
+      "type": "document",
+      "name": "README",
+      "file_path": "README.md",
+      "summary": "markdown (1096 lines)",
+      "tags": [
+        "markdown"
+      ],
+      "complexity": "complex"
+    },
+    {
+      "id": "04dc5b2136328a0d",
+      "type": "module",
+      "name": "cmd",
+      "summary": "Directory: cmd",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "705f89b88936c220",
+      "type": "module",
+      "name": "fabric",
+      "summary": "Directory: cmd/fabric",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "3a6eb0790f39ac87",
+      "type": "module",
+      "name": "data",
+      "summary": "Directory: data",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "dd386ab2906daf55",
+      "type": "module",
+      "name": "patterns",
+      "summary": "Directory: data/patterns",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "c7b17e7f6d96adbf",
+      "type": "module",
+      "name": "create_conceptmap",
+      "summary": "Directory: data/patterns/create_conceptmap",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "93e68f6cce39a063",
+      "type": "module",
+      "name": "raw_query",
+      "summary": "Directory: data/patterns/raw_query",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "b2d0a4393df5a3c2",
+      "type": "module",
+      "name": "summarize",
+      "summary": "Directory: data/patterns/summarize",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "21f5e05d585f6d3f",
+      "type": "module",
+      "name": "strategies",
+      "summary": "Directory: data/strategies",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "04dc5b2136328a0d",
+      "target": "705f89b88936c220",
+      "type": "contains",
+      "direction": "forward",
+      "description": "cmd contains cmd/fabric",
+      "weight": 0.3
+    },
+    {
+      "source": "705f89b88936c220",
+      "target": "372ad266bc48ad4f",
+      "type": "contains",
+      "direction": "forward",
+      "description": "cmd/fabric contains cmd/fabric/main.go",
+      "weight": 0.3
+    },
+    {
+      "source": "3a6eb0790f39ac87",
+      "target": "dd386ab2906daf55",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data contains data/patterns",
+      "weight": 0.3
+    },
+    {
+      "source": "dd386ab2906daf55",
+      "target": "c7b17e7f6d96adbf",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns contains data/patterns/create_conceptmap",
+      "weight": 0.3
+    },
+    {
+      "source": "c7b17e7f6d96adbf",
+      "target": "de3016eeba5ddef0",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns/create_conceptmap contains data/patterns/create_conceptmap/system.md",
+      "weight": 0.3
+    },
+    {
+      "source": "dd386ab2906daf55",
+      "target": "93e68f6cce39a063",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns contains data/patterns/raw_query",
+      "weight": 0.3
+    },
+    {
+      "source": "93e68f6cce39a063",
+      "target": "0763ce31103ebd1a",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns/raw_query contains data/patterns/raw_query/system.md",
+      "weight": 0.3
+    },
+    {
+      "source": "dd386ab2906daf55",
+      "target": "b2d0a4393df5a3c2",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns contains data/patterns/summarize",
+      "weight": 0.3
+    },
+    {
+      "source": "b2d0a4393df5a3c2",
+      "target": "dafa65885f3507f2",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns/summarize contains data/patterns/summarize/system.md",
+      "weight": 0.3
+    },
+    {
+      "source": "b2d0a4393df5a3c2",
+      "target": "8100f5f1a616c02a",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/patterns/summarize contains data/patterns/summarize/user.md",
+      "weight": 0.3
+    },
+    {
+      "source": "3a6eb0790f39ac87",
+      "target": "21f5e05d585f6d3f",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data contains data/strategies",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "d862e4b3cfee5662",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/aot.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "3f229b652402e951",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/cod.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "5a503666c8f5acd2",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/cot.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "89c20da4fc3ba002",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/ltm.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "886a3475fd369e66",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/reflexion.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "2e269b52b4b97c99",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/self-consistent.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "92f5d4ed217838b0",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/self-refine.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "2260c76f02c3cd76",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/standard.json",
+      "weight": 0.3
+    },
+    {
+      "source": "21f5e05d585f6d3f",
+      "target": "8cf30db3f03211f0",
+      "type": "contains",
+      "direction": "forward",
+      "description": "data/strategies contains data/strategies/tot.json",
+      "weight": 0.3
+    }
+  ],
+  "layers": [
+    {
+      "id": "code",
+      "name": "Core Code",
+      "description": "Source code files and modules",
+      "node_ids": [
+        "372ad266bc48ad4f",
+        "33ef32bf6c23acb9",
+        "04dc5b2136328a0d",
+        "705f89b88936c220",
+        "3a6eb0790f39ac87",
+        "dd386ab2906daf55",
+        "c7b17e7f6d96adbf",
+        "93e68f6cce39a063",
+        "b2d0a4393df5a3c2",
+        "21f5e05d585f6d3f"
+      ]
+    },
+    {
+      "id": "config",
+      "name": "Configuration",
+      "description": "Configuration and settings files",
+      "node_ids": [
+        "d862e4b3cfee5662",
+        "3f229b652402e951",
+        "5a503666c8f5acd2",
+        "89c20da4fc3ba002",
+        "886a3475fd369e66",
+        "2e269b52b4b97c99",
+        "92f5d4ed217838b0",
+        "2260c76f02c3cd76",
+        "8cf30db3f03211f0"
+      ]
+    },
+    {
+      "id": "docs",
+      "name": "Documentation",
+      "description": "Documentation and markdown files",
+      "node_ids": [
+        "de3016eeba5ddef0",
+        "0763ce31103ebd1a",
+        "dafa65885f3507f2",
+        "8100f5f1a616c02a",
+        "b335630551682c19"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Project Overview",
+      "description": "This project contains 16 files organized across 8 directories. Start here to understand the high-level structure.",
+      "node_ids": [
+        "372ad266bc48ad4f",
+        "de3016eeba5ddef0",
+        "0763ce31103ebd1a",
+        "dafa65885f3507f2",
+        "8100f5f1a616c02a"
+      ],
+      "language_lesson": "A knowledge graph represents code as interconnected nodes — files, functions, classes — with edges showing how they relate."
+    },
+    {
+      "order": 2,
+      "title": "Directory Structure",
+      "description": "The project has 8 top-level directories. Each contains related files grouped by purpose.",
+      "node_ids": [
+        "04dc5b2136328a0d",
+        "705f89b88936c220",
+        "3a6eb0790f39ac87",
+        "dd386ab2906daf55",
+        "c7b17e7f6d96adbf",
+        "93e68f6cce39a063",
+        "b2d0a4393df5a3c2",
+        "21f5e05d585f6d3f"
+      ],
+      "language_lesson": "Contains edges (parent→child) show the file tree hierarchy in graph form."
+    },
+    {
+      "order": 3,
+      "title": "Source Code Files",
+      "description": "2 source code files found. These define the project's source code.",
+      "node_ids": [
+        "372ad266bc48ad4f",
+        "33ef32bf6c23acb9"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "Configuration Files",
+      "description": "9 configuration files found. These define the project's configuration.",
+      "node_ids": [
+        "d862e4b3cfee5662",
+        "3f229b652402e951",
+        "5a503666c8f5acd2",
+        "89c20da4fc3ba002",
+        "886a3475fd369e66",
+        "2e269b52b4b97c99",
+        "92f5d4ed217838b0",
+        "2260c76f02c3cd76",
+        "8cf30db3f03211f0"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Documentation Files",
+      "description": "5 documentation files found. These define the project's documentation.",
+      "node_ids": [
+        "de3016eeba5ddef0",
+        "0763ce31103ebd1a",
+        "dafa65885f3507f2",
+        "8100f5f1a616c02a",
+        "b335630551682c19"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "Explore Connections",
+      "description": "Use the graph to trace imports, dependencies, and directory structure. Each edge type reveals a different relationship.",
+      "node_ids": [],
+      "language_lesson": "Imports edges show module dependencies. Contains edges show directory hierarchy. Together they reveal the project's architecture."
+    }
+  ]
+}
