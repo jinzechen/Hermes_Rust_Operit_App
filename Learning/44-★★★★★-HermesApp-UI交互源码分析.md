@@ -173,6 +173,56 @@ src/ui/
 └── auth.rs           → GitHub OAuth
 ```
 
+---
+
+## 六、UI ↔ AI 后端交互层（99KB EnhancedAIService）
+
+UI 与 AI 后端的交互通过三层架构实现：
+
+```
+UI (Composable)
+  ↓ @Composable 函数调用
+ChatRuntimeHolder (7.5KB)
+  ├── getCore(slot) → 获取聊天核心
+  ├── observeStats() → 统计监控
+  ├── setupCrossSessionSync() → 跨会话同步
+  ├── registerTurnSync() → 轮次同步注册
+  └── syncMainChatSelectionToFloating() → 主窗口↔浮动窗口同步
+
+EnhancedAIService (99KB) ★核心
+  ├── getInstance() / getChatInstance() → 单例/按聊天实例
+  ├── releaseChatInstance() → 释放聊天实例
+  ├── getAIServiceForFunction() → 按功能获取 AI 服务
+  ├── getModelConfigForFunction() → 模型配置
+  ├── refreshServiceForFunction() → 刷新服务
+  ├── getCurrentInputTokenCount() → 当前输入 Token 数
+  ├── getCurrentOutputTokenCount() → 当前输出 Token 数
+  ├── resetTokenCounters() → 重置 Token 计数
+  └── applyFileBinding() → 应用文件绑定
+
+ChatRuntimeSlot (枚举)
+  ├── CHAT — 主聊天
+  ├── FLOATING — 浮动窗口
+  └── EXTERNAL_HTTP — 外部 HTTP
+```
+
+### Rust 复刻
+
+```rust
+// Dioxus UI → Rust Agent 的交互模式
+struct ChatRuntime {
+    agent: Arc<AgentLoop>,
+    state: Signal<ChatState>,
+}
+
+// UI 发送消息 → Agent 处理 → UI 更新
+async fn send_message(mut rt: ChatRuntime, msg: String) {
+    rt.state.write().messages.push(Message::User(msg));
+    let response = rt.agent.run().await;
+    rt.state.write().messages.push(response);
+}
+```
+
 ### 评分：★★★★★
 
 HermesApp 的 50+ 页面、三 Tab 商店、25+ 设置页面是 Hermes_Rust_Operit_App 的完整 UI 功能清单。Dioxus 只需覆盖核心功能（聊天+商店+设置）即可，无需全部重写。

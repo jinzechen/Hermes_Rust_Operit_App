@@ -185,14 +185,46 @@ Output/json/05-operit-mcps.json            — 897KB, 1505 nodes
 Output/json/hermesapp-shizuku.json         — 2.5KB, 5 nodes
 Output/json/hermesapp-access.json          — 5KB
 Output/json/hermesapp-foreground.json      — 5KB
+Output/json/hermesapp-ui-full.json         — 450KB, 12 UI 源文件
 Output/json/rmcp-sdk.json                  — 5KB, 9 nodes
 Output/json/wasmer-sandbox.json            — 3KB
 Output/json/mistralrs.json                 — 3KB, 6 nodes
 Output/json/hermes-agent-rs-engine.json    — 380KB
-Output/json/hermes-app-core.json           — 50KB
 ...共 38 个 JSON 分析文件
 ```
 
+## 五、新完成的 UI 层分析（报告 44）
+
+### HermesApp UI 完整分析（12 源文件，~450KB）
+
+| 文件 | 大小 | 内容 |
+|------|------|------|
+| OperitApp.kt | 17KB | 应用入口 + 导航框架 |
+| OperitScreens.kt | **72KB** | 50+ 页面定义 |
+| AIChatScreen.kt | **93KB** | 对话主界面 |
+| ChatScreenContent.kt | 50KB | 聊天内容 |
+| SettingsScreen.kt | 26KB | 25+ 设置页面 |
+| UserPreferencesSettingsScreen.kt | **68KB** | 用户偏好 |
+| UnifiedMarketScreen.kt | 29KB | 三 Tab 商店 |
+| ToolboxScreen.kt | 31KB | 工具箱 |
+| EnhancedAIService.kt | **99KB** | AI 服务交互层 |
+| ChatRuntimeHolder.kt | 7.5KB | 运行时管理 |
+
+### UI 架构
+
+```
+Dioxus UI (Rust 复刻):
+src/ui/
+├── app.rs        → OperitApp 等效
+├── chat.rs       → AIChatScreen (93KB)
+├── store.rs      → 三 Tab 商店 (Artifact/Skill/MCP)
+├── toolbox.rs    → 工具列表
+├── settings.rs   → 设置
+├── memory.rs     → 记忆库
+└── auth.rs       → GitHub OAuth
+```
+
+## 六、重要提示
 ---
 
 ## 五、重要提示
