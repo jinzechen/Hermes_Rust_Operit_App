@@ -181,26 +181,45 @@ ToolRegistry
 
 ---
 
-## 四、对 Hermes_Rust_Operit_App 的精确整合方案
+## 四、源代码实现如何映射到 Rust 复刻
 
-### 直接引入的 crate（零编码）
+### AgentLoop → hermes-agent crate（直接引用）
 
-```toml
-[dependencies]
-hermes-core = { git = "https://github.com/Lumio-Research/hermes-agent-rs" }
-hermes-agent = { git = "..." }
-hermes-tools = { git = "...", features = ["default"] }
-hermes-mcp = { git = "..." }
-hermes-config = { git = "..." }
+hermes-agent-rs 的 `AgentLoop`（7,001 行）已经是一个完整的 Rust 实现，包含：
+
+| 源码组件 | 行数 | Rust 复刻方式 | 在 Hermes_Rust 中的位置 |
+|---------|------|-------------|----------------------|
+| `AgentLoop.run()` | 7,001 | `cargo add hermes-agent` | `core/agent.rs` → agent_loop.run() |
+| `ToolRegistry` | 423 | `cargo add hermes-tools` | `core/tool_registry.rs` → ToolRegistry |
+| `MemoryManager` | 657 | `cargo add hermes-agent` | `core/memory.rs` → MemoryManager |
+| `SubAgentOrchestrator` | 617 | 同上 | —（新文件） |
+| `SmartModelRouting` | 419 | 同上 | `core/provider.rs` → 扩展路由 |
+
+### 35 个工具 → hermes-tools crate（直接引用）
+
+| Hermes 已有工具 | 对应 Rust 源文件 | 复刻方式 |
+|---------------|----------------|---------|
+| `browser.rs` | `tools/browser.rs` (BrowserNavigate/Snapshot/Click...) | ✅ 已有 |
+| `vision.rs` | `tools/vision.rs` (VisionAnalyzeHandler) | ✅ 已有 |
+| `filesystem.rs` | `tools/file.rs` | ✅ 已有 |
+| `markdown.rs` | tools 中 markdown 相关 | ✅ 已有 |
+| ❌ 无 | `tools/terminal.rs` | 🔜 新增 |
+| ❌ 无 | `tools/web.rs` (搜索+抓取) | 🔜 新增 |
+| ❌ 无 | `tools/tts.rs` (语音合成) | 🔜 新增 |
+| ❌ 无 | `tools/cronjob.rs` (定时任务) | 🔜 新增 |
+| ❌ 无 | `tools/delegation.rs` (子Agent) | 🔜 新增 |
+
+### 18 个 crate 中哪些直接复用，哪些不需要
+
 ```
-
-### 需要编写的 Android 桥接
-
-| 组件 | 说明 | 行数 |
-|------|------|------|
-| Dioxus UI | 聊天界面 + 商店 | ~3,000 |
-| JNI 桥接 | 无障碍/Termux/通知 | ~1,000 |
-| MCP 商店 | 四 Tab 管理界面 | ~500 |
+直接引入（零修改）: hermes-core, hermes-agent, hermes-mcp, hermes-config
+按需引入（feature gate）: hermes-tools, hermes-skills, hermes-cron
+不需要: hermes-cli（Dioxus UI 替代）
+         hermes-gateway（Android 不需要多平台网关）
+         hermes-server（Android 不需要 HTTP 服务）
+         hermes-eval（评估，按需）
+         hermes-telemetry（遥测，按需）
+```
 
 ### 评分：★★★★★
 
