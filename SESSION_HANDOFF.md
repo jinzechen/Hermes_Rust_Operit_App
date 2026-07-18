@@ -1,196 +1,115 @@
-# SESSION_HANDOFF.md — 逐步骤执行清单
+# SESSION_HANDOFF.md — v4-flash 学习任务清单
 
-> 目标 AI：deepseek-v4-flash  
-> 规则：严格按编号顺序执行，完成一步再下一步。每步完成后 `git commit && git push`。
-
----
-
-## 第 0 步：了解项目
-
-读这 3 个文件了解全局（不要读别的，浪费时间）：
-1. `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\README.md`
-2. `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\ARCHITECTURE.md`
-3. `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\Cargo.toml`
+> 接收者：deepseek-v4-flash  
+> 你的任务：**只学习，不写代码**  
+> 每完成一个项目，写一份学习报告到 Learning/ 目录，git commit && git push
 
 ---
 
-## 第 1 步：修复 CI
+## 学习任务列表（按顺序逐个执行）
 
+### 任务 1：学习 ds4 本地推理引擎
 ```
-任务：让 GitHub Actions 的 cargo check 通过
-当前状态：CI 失败，exit code 101
-```
-
-**操作**：
-1. `git pull` 拉最新代码
-2. 打开 `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\.github\workflows\build.yml`
-3. 确认内容只有 `cargo check` 和 `cargo test`
-4. 推送后跑 `gh workflow run build.yml --repo jinzechen/Hermes_Rust_Operit_App`
-5. 等 CI 结果：`gh run watch <run_id> --repo jinzechen/Hermes_Rust_Operit_App --exit-status`
-6. 如果失败，用 `gh run view <run_id> --log --job=<job_id>` 查看错误
-7. 修改对应源码文件，提交推送，重复直到 CI 绿色
-
-**已知可能错误**：
-- `src/core/memory.rs` — redb `ReadTransaction` 生命周期问题
-- `src/ui/login.rs` — oauth2 `request()` API 签名问题
-- 各种 `use anyhow::anyhow` 缺失
-
-**检查命令**（用于 CI 日志）：
-```
-gh run view <run_id> --repo jinzechen/Hermes_Rust_Operit_App --log 2>&1 | grep "error\[E" | head -10
+仓库：https://github.com/ldclabs/ds4
+重点：DeepSeek 4 Flash 本地推理，Metal 加速
+产出：Learning/18-ds4-本地推理.md
+问题：(1) 能否在 Android 上运行？(2) 和 llama.cpp 比有什么优势？(3) API 接口是什么样？
 ```
 
----
-
-## 第 2 步：替换记忆系统
-
+### 任务 2：学习 RustDesk Android 架构
 ```
-任务：用 tinycortex 替换当前的简陋 MemoryStore
-来源：Learning/02-OpenHuman-记忆系统.md
-```
-
-**操作**：
-1. 读 `Learning/02-OpenHuman-记忆系统.md` 了解 tinycortex API
-2. `cargo add tinycortex --features git-diff,persona`（在项目目录执行）
-3. 修改 `src/core/memory.rs`：
-   - 保留 `Message` 结构体
-   - 删除 `MemoryStore` 和它的 redb 实现
-   - 新建 `MemoryStore` 封装 tinycortex 的 API
-   - `save_session()` → tinycortex 的 memory store
-   - `load_session()` → tinycortex 的 recall
-4. 修改 `src/core/agent.rs` 中所有引用 `MemoryStore` 的地方适配新 API
-5. `git commit -m "Replace MemoryStore with tinycortex" && git push`
-6. 确认 CI 通过
-
----
-
-## 第 3 步：完善 Skill 系统
-
-```
-任务：实现完整的 Skill 生命周期
-来源：Learning/13-Operit-插件格式规范.md + Learning/14-Python-Hermes-原版Agent.md
+仓库：https://github.com/rustdesk/rustdesk
+重点：Rust 写的 Android 应用！80k+ stars
+产出：Learning/19-rustdesk-Android架构.md
+问题：(1) 他们的 Android 构建流程是什么？(2) 用了什么 Rust-Android 桥接方案？(3) 网络层架构？
 ```
 
-**操作**：
-1. 读 `Learning/13-Operit-插件格式规范.md` 的 Skill 格式部分
-2. 读 `Learning/14-Python-Hermes-原版Agent.md` 的 Skills 系统部分
-3. 修改 `src/store/mod.rs`：
-   - `skill_view(name)` → 读取 SKILL.md 返回内容
-   - `skill_list()` → 扫描目录返回所有 skill 名称
-   - `skill_install(zip_path)` → 解压 ZIP 到 skills 目录
-4. 在 `src/core/agent.rs` 添加：
-   - AgentManager 新增方法：`invoke_skill(skill_name, user_text)`
-   - skill 调用时展开 SKILL.md 内容到 system prompt
-5. `git commit -m "Complete skill lifecycle" && git push`
-
----
-
-## 第 4 步：Agent Loop 增强
-
+### 任务 3：学习 fabric AI 模式库
 ```
-任务：参考 Python Hermes 增强 AgentLoop
-来源：Learning/14-Python-Hermes-原版Agent.md
+仓库：https://github.com/danielmiessler/fabric
+重点：255 个 AI patterns，9 种 strategies
+产出：Learning/20-fabric-AI模式库.md
+问题：(1) pattern 格式规范是什么？(2) 哪些 pattern 适合内置到 Agent？(3) strategy 怎么组合 pattern？
 ```
 
-**操作**：
-1. 读 `Learning/14-Python-Hermes-原版Agent.md` 的 Agent Loop 部分
-2. 修改 `src/core/agent.rs` 的 `agent_loop()` 方法：
-   - 添加 `max_iterations` 限制（默认 20）
-   - 添加 context 压力检测（消息数 > 阈值时压缩）
-   - 添加 tool call 去重（同名同参数不重复执行）
-3. `git commit -m "Enhance AgentLoop: iteration limit, context pressure, tool dedup" && git push`
-
----
-
-## 第 5 步：安全层
-
+### 任务 4：学习 GlueSQL 嵌入式数据库
 ```
-任务：添加基本的工具安全策略
-来源：Learning/03-Hermes-Agent-Ultra-安全策略.md
+仓库：https://github.com/gluesql/gluesql
+重点：Rust 写的 SQL 数据库，可嵌入
+产出：Learning/21-gluesql-嵌入式数据库.md
+问题：(1) 和 redb 比优缺点？(2) 和 SQLite 比？(3) 是否适合做记忆存储？
 ```
 
-**操作**：
-1. 读 `Learning/03-Hermes-Agent-Ultra-安全策略.md` 的 guard.rs 部分
-2. 新建 `src/core/guard.rs`：
-   - 危险命令检测函数（rm -rf, sudo, chmod 777 等）
-   - prompt injection 检测函数
-3. 修改 `src/core/tool_registry.rs`：
-   - ToolRegistry::execute_tool() 前调用 guard 检查
-4. `git commit -m "Add basic tool security guard" && git push`
-
----
-
-## 第 6 步：Token 优化
-
+### 任务 5：学习 EmbedAnything 推理管线
 ```
-任务：添加工具输出过滤
-来源：Learning/07-rtk-cc-switch-优化与路由.md
+仓库：https://github.com/StarlightSearch/EmbedAnything
+重点：Rust 推理和嵌入管线
+产出：Learning/22-EmbedAnything-推理管线.md
+问题：(1) 支持哪些嵌入模型？(2) 管线架构？(3) 能否在 Android 上用？
 ```
 
-**操作**：
-1. 新建 `src/core/optimizer.rs`
-2. 实现 3 个基础过滤策略：
-   - 去重：相同行只保留一条 + 计数
-   - 截断：输出超过 N 字符自动截断
-   - 空行压缩：连续空行 → 单个空行
-3. 修改 `src/core/agent.rs`：
-   - `execute_tool_call()` 后调用 optimizer.filter()
-4. `git commit -m "Add token optimizer with dedup/truncate/compact" && git push`
-
----
-
-## 第 7 步：补充缺失模块
-
+### 任务 6：学习 Agent-S 计算机使用
 ```
-任务：创建之前计划但未实现的文件
+仓库：https://github.com/simular-ai/Agent-S
+重点：S3 版超越人类 (OSWorld 72.6%)
+产出：Learning/23-AgentS-计算机使用.md
+问题：(1) 计算机使用 Agent 的架构？(2) 怎么做到超人类的？(3) 能不能用在 Android 上？
 ```
 
-**逐个创建以下文件**（不要批量，一个一个来）：
-
-### 7a: `src/core/character.rs`
-```rust
-// 角色卡系统，仿 Operit CharacterCard 结构
-// CharacterCard { id, name, description, persona_prompt, opening_statement, tags }
-// CharacterCardManager { load(), save(), list(), set_active() }
+### 任务 7：学习 sherpa-rs 语音引擎
+```
+仓库：搜索 crates.io 上的 sherpa-rs
+重点：Rust 语音合成/识别
+产出：Learning/24-sherpa-语音引擎.md
+问题：(1) API 接口？(2) 支持中文吗？(3) 能否编译到 Android？
 ```
 
-### 7b: `src/store/sources.rs`
-```rust
-// GitHub 源聚合
-// SourceConfig { name, url, category }
-// SourceManager { add_source(), list_sources(), fetch_index() }
+### 任务 8：学习 MCP Rust 实现
+```
+仓库：搜索 crates.io 上的 rmcp, mcp-rs, mcp-core
+重点：Rust 原生 MCP 协议实现
+产出：Learning/25-MCP-Rust生态.md
+问题：(1) 哪个最成熟？(2) 和我们的 McpClient 比谁更好？(3) 值得替换吗？
 ```
 
-### 7c: `src/core/local_model.rs`
-```rust
-// 本地模型管理（骨架）
-// LocalModelManager { list_models(), load_model() }
+### 任务 9：学习 skillsrs/skills-rs
+```
+仓库：搜索 crates.io 和 GitHub 上的 skillsrs, skills-rs
+重点：Rust Skill 框架
+产出：Learning/26-skillsrs-Rust技能框架.md
+问题：(1) skill 格式如何定义？(2) 和 Operit 的 .skill 兼容吗？(3) 值得用吗？
 ```
 
-### 7d: 更新 `src/core/mod.rs` 添加新模块声明
-### 7e: 更新 `src/lib.rs` 添加新模块声明
-
-`git commit -m "Add character, sources, local_model modules" && git push`
-
----
-
-## 第 8 步：确认全部通过
-
+### 任务 10：学习 shadowsocks-rust 网络模式
 ```
-cargo check 通过
-cargo test 通过
-CI 绿色
+仓库：https://github.com/shadowsocks/shadowsocks-rust
+重点：Rust 异步网络编程模式
+产出：Learning/27-shadowsocks-网络模式.md
+问题：(1) 异步 I/O 架构？(2) 加密层设计？(3) 可复用的网络模式？
 ```
 
 ---
 
-## ⚠️ 重要规则
+## 执行规则
 
-1. **每步完成后必须 git commit && git push**，不要攒着一起提交
-2. **不要从头学起**——17 份学习报告在 Learning/ 目录，直接读需要的
-3. **不要改已有模块的接口签名**——只做增量修改
-4. **cargo check 失败时优先修编译错误**，不要继续写新功能
-5. **回复用中文**，简洁直接，不要废话
+1. **不要写代码**——只读文档，写报告
+2. **每完成一个任务立即 git commit && git push**
+3. 报告格式：项目名 + 核心发现 + 3-5 个具体可复用点 + 对 Hermes_Rust_Operit_App 的建议
+4. 报告放在 `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\Learning\`
+5. 文件命名：`<编号>-<英文名>-<中文描述>.md`
+6. 用中文写报告，简洁直接
+7. 读项目用 curl 拉 README + 关键源文件，不要试图 clone 或编译
+
+---
+
+## 项目上下文速查
+
+```
+本地路径：D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App
+仓库：https://github.com/jinzechen/Hermes_Rust_Operit_App
+已有学习报告：Learning/01-17 (17份)
+模型：deepseek-v4-flash（已配置）
+```
 
 ---
 
