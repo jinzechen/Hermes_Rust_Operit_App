@@ -23,6 +23,19 @@
 | 需网络 | 完全本地 |
 | 无唤醒 | 语音唤醒 |
 
-### 评分：★★★★★
+### Rust 复刻总结
 
-sherpa-onnx 是 Android 语音交互的事实标准。已预编译 Android .so，直接加载即可。Operit_MCPS 已有对应的 sherpa MCP 插件。
+```rust
+// 直接加载 sherpa-onnx Android .so
+// sherpa-onnx 已提供预编译 aarch64-linux-android .so
+
+// ASR：语音→文字
+let recognizer = sherpa_rs::Recognizer::new("whisper-tiny.onnx");
+let text = recognizer.recognize(audio_data)?;
+
+// TTS：文字→语音
+let synthesizer = sherpa_rs::Tts::new("vits-model.onnx");
+let audio = synthesizer.synthesize("你好，我是 Hermes")?;
+```
+
+### 评分：★★★★★

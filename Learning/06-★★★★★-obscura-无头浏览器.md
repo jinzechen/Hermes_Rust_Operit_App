@@ -35,6 +35,21 @@ obscura (Rust, 19K⭐)
 obscura mcp  # 启动 MCP 服务器模式
 ```
 
-## 评分：★★★★★
+### Rust 复刻总结
 
-obscura 已打包为 Operit_MCPS 插件，可直接通过 MCP 调用。如果需要更高性能，可以将其 browser 能力内化为 ToolHandler。
+obscura 在 Hermes 中有两条路径：
+
+**路径 A：MCP 模式（现有）**
+```rust
+let client = McpClient::connect_stdio("obscura", &["mcp"]);
+let result = client.call_tool("browser_navigate", json!({"url": "..."})).await?;
+```
+
+**路径 B：ToolHandler 模式（高性能）**
+```rust
+// 将 obscura 的 CDP 控制提取为 ToolHandler
+let handler = BrowserNavigateHandler::new(ObscuraBackend::new());
+let result = handler.handle(tool_call).await?;  // 0 开销
+```
+
+### 评分：★★★★★

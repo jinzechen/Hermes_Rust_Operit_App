@@ -171,6 +171,20 @@ let graph = ua_core::graph::build_graph(path, &scan, &parsed);
 | Agent 触发 | 手动 | → 对话中自动"分析当前项目" |
 | 增量分析 | Blake3 已实现 | → 自动检测变更 |
 
-### 评分：★★★★★
+### Rust 复刻总结
 
-UA Rust 是这套学习系统的核心工具。本报告所有分析数据都由其生成。已作为 `ua-core` path dep 集成在 Hermes_Rust_Operit_App 中。
+UA Rust 已 Hermes_Rust_Operit_App 的 tools/codebase_analyzer.rs 中作为 path dependency 集成：
+
+```rust
+// Cargo.toml
+ua-core = { path = "../Understand_Anything_Rust/crates/ua-core" }
+
+// tools/codebase_analyzer.rs
+let scan = ua_core::scanner::scan_project(path)?;
+let graph = ua_core::graph::build_graph(path, &scan, &parsed);
+// → ToolHandler 输出 HTML/MD/JSON 三种格式
+```
+
+三种输出格式：HTML（D3.js 仪表盘）、MD（人机可读报告）、JSON（知识图谱数据）。
+
+### 评分：★★★★★

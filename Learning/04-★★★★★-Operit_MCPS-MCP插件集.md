@@ -70,6 +70,27 @@ done
 
 ---
 
-## 四、评分：★★★★★
+### Rust 复刻总结
+
+5 个可内置化到 ToolHandler（零开销）的插件直接移到 hermes-tools：
+
+```rust
+// 内置插件路径
+src/tools/browser.rs       ← 从 obscura MCP 提取核心逻辑
+src/tools/vision.rs        ← 从 agentic_vision MCP 提取
+src/tools/filesystem.rs    ← 从 rust_mcp_filesystem 提取
+src/tools/markdown.rs      ← 从 typemill 提取
+src/tools/speech.rs        ← 从 sherpa MCP 提取
+```
+
+4 个保留 MCP 的插件通过 hermes-mcp 客户端调用：
+
+```rust
+// MCP 插件路径
+let client = McpClient::connect_stdio("rust-mcp-server", &[]);
+let tools = client.list_tools().await?;
+```
+
+### 评分：★★★★★
 
 Operit_MCPS 是 Hermes_Rust_Operit_App 和 Operit Android 壳之间的桥梁。9 个插件中 5 个可内置化提升性能，4 个保留 MCP 提供扩展性。

@@ -47,6 +47,18 @@ candle-transformers = "0.11"
 | 语音识别 | candle + Whisper | tiny.en | ~150MB |
 | 重排序 | candle + BGE Reranker | bge-reranker | ~100MB |
 
-### 评分：★★★★★
+### Rust 复刻总结
 
-candle + EmbedAnything 是 Hermes 本地 AI 能力的基础。Model2Vec（8M 参数）是最适合 Android 的嵌入模型。
+```rust
+use candle_core::Device;
+use candle_nn::Embedding;
+
+// 本地嵌入（Model2Vec 8M 参数，Android 可用）
+let device = Device::Cpu;
+let model = Embedding::new(/* 加载 Model2Vec */);
+let embedding = model.forward(&tokens)?;
+
+// 嵌入后存入 qdrant 或 tinycortex 的向量存储
+```
+
+### 评分：★★★★★

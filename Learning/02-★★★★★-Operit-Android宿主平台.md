@@ -59,3 +59,20 @@ Shizuku.newProcess(arrayOf("input", "tap", "500", "500"), null, null)
 ### 评分：★★★★★
 
 Operit/HermesApp 提供的 Android 特定功能（Shizuku、无障碍、前台服务）是 Hermes_Rust_Operit_App 需要实现的 Android 桥接层的完整功能清单。
+
+### Rust 复刻总结
+
+```
+hermes-rust-android-bridge/     ← 新增模块，约 1,500 行
+├── jni.rs                     ← jni-rs 初始化 + JNI 函数注册
+├── accessibility.rs           ← AccessibilityService 桥接
+├── shizuku.rs                 ← Shizuku 权限桥接
+├── foreground.rs              ← ForegroundService 桥接
+├── notification.rs            ← NotificationManager 桥接
+├── termux.rs                  ← Termux 通道桥接
+└── filesystem.rs              ← Android SAF 文件系统
+```
+
+Dioxus UI 复用 Operit 的设计语言：对话界面 + 四 Tab 商店 + 设置。
+
+### 评分：★★★★★

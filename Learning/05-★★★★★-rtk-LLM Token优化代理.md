@@ -32,6 +32,19 @@
 export HERMES_LLM_BASE_URL=http://localhost:8080  # rtk 代理地址
 ```
 
-## 评分：★★★★★
+### Rust 复刻总结
+
+rtk 作为 HTTP 代理集成到 Hermes provider 层，零代码改动：
+
+```bash
+# 在 Hermes 启动前设置
+export HERMES_LLM_BASE_URL=http://localhost:8080  # rtk 代理
+export RTK_CACHE_ENABLED=true
+export RTK_COMPRESSION_ENABLED=true
+```
+
+或者直接在 provider.rs 中集成 rtk 的 Rust API（如果提供了 library 模式）。
+
+### 评分：★★★★★
 
 rtk 是最高性价比集成——零代码改动、直接节省 60-90% token 成本。

@@ -110,6 +110,23 @@ fn StoreView(cx: Scope) -> Element {
 
 ---
 
-## 四、评分：★★★★★
+### Rust 复刻总结
 
-Dioxus 是 Hermes 的 UI 方案唯一推荐。36K⭐ 验证了成熟度，Android 原生支持（dioxus-native Blitz），声明式 UI 适合聊天界面。
+```
+dx create hermes-app --platform android  # 创建 Android 项目
+cd hermes-app
+dx serve --platform android              # 在真机/模拟器运行
+```
+
+UI 组件架构：
+
+```
+ui/
+├── main.rs          → 入口 + 路由
+├── chat.rs          → 对话界面（消息列表 + 输入框）
+├── store.rs         → 四 Tab 商店（沙盒/Skills/MCP/我的）
+├── settings.rs      → 设置界面
+└── auth.rs          → GitHub OAuth 登录
+```
+
+### 评分：★★★★★

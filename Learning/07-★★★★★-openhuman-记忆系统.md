@@ -42,6 +42,23 @@ let results = engine.recall("主题偏好").await?;  // 混合检索
 | 同步执行 | 异步 worker 管线 |
 | 1 种存储 | SQLite + 向量 + 图 |
 
-### 评分：★★★★★
+### Rust 复刻总结
 
-tinycortex 可以直接替换 Hermes 的 `memory.rs`（6KB），获得完整的记忆引擎（35K⭐ 项目的核心提取）。
+```toml
+[dependencies]
+tinycortex = { version = "0.1" }
+```
+
+替换 Hermes_Rust_Operit_App 的 core/memory.rs：
+
+```rust
+// 之前: memory: HashMap<String, MemoryEntry> → 精确 key 匹配
+// 之后: engine = MemoryEngine::new(config) → 混合检索
+
+let results = engine.recall("用户偏好").await?;
+// 返回: 向量 70% + 关键词 30% 混合排序结果
+```
+
+获得能力：摘要树 L0→L1→L2、异步 worker 管线、SQLite+向量+图存储。
+
+### 评分：★★★★★
