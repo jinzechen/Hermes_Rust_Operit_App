@@ -69,6 +69,8 @@ hermes-core = { git = "https://github.com/Lumio-Research/hermes-agent-rs", versi
 tantivy = { version = "0.26.1", default-features = false, features = ["mmap"] }
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "blocking", "native-tls"] }
 oauth2 = { version = "4.4", default-features = false, features = ["reqwest"] }
+dioxus = { version = "0.7.9", features = ["web"] }
+dioxus-html = "0.7.9"
 
 # === UI (Dioxus for Android) ===
 # dioxus = { version = "0.5", features = ["mobile"] }

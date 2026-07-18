@@ -1,4 +1,9 @@
+pub mod app;
 pub mod chat;
+pub mod components;
 pub mod login;
+pub mod market;
+pub mod memory_view;
 pub mod settings;
 pub mod store_page;
+pub mod toolbox;

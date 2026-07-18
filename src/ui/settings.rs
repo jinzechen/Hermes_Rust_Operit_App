@@ -1,5 +1,10 @@
+use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Data models (preserved from original skeleton)
+// ──────────────────────────────────────────────────────────────────────────────
 
 /// User-facing application UI settings.
 ///
@@ -22,7 +27,7 @@ impl Default for AppSettings {
         Self {
             model_config: "gpt-4".to_string(),
             theme: "system".to_string(),
-            language: "en".to_string(),
+            language: "zh-CN".to_string(),
             api_keys: std::collections::HashMap::new(),
         }
     }
@@ -118,6 +123,132 @@ impl SettingsManager {
     }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Dioxus Settings UI Component
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// A single settings row with label and action/content.
+#[component]
+fn SettingsRow(
+    icon: &'static str,
+    label: &'static str,
+    description: &'static str,
+    children: Element,
+) -> Element {
+    rsx! {
+        div { class: "settings-row",
+            div { class: "settings-row-icon", "{icon}" }
+            div { class: "settings-row-info",
+                span { class: "settings-row-label", "{label}" }
+                span { class: "settings-row-desc", "{description}" }
+            }
+            div { class: "settings-row-action",
+                {children}
+            }
+        }
+    }
+}
+
+/// Settings page component.
+#[component]
+pub fn SettingsPage() -> Element {
+    let mut logged_in = use_signal(|| false);
+    let mut theme = use_signal(|| "system".to_string());
+
+    rsx! {
+        div { class: "settings-page",
+            h2 { class: "page-title", "⚙️ 设置" }
+
+            div { class: "settings-list",
+
+                // ── 助手配置 ──
+                SettingsRow {
+                    icon: "🤖",
+                    label: "助手配置",
+                    description: "配置 AI 模型、温度、最大 Token 等参数",
+                    button { class: "settings-action-btn", "配置 →" }
+                }
+
+                // ── API 密钥 ──
+                SettingsRow {
+                    icon: "🔑",
+                    label: "API 密钥",
+                    description: "管理 OpenAI、Claude 等第三方 API 密钥",
+                    button { class: "settings-action-btn", "管理 →" }
+                }
+
+                // ── 角色卡 ──
+                SettingsRow {
+                    icon: "🃏",
+                    label: "角色卡",
+                    description: "编辑助手的系统提示词和角色设定",
+                    button { class: "settings-action-btn", "编辑 →" }
+                }
+
+                // ── 语音服务 ──
+                SettingsRow {
+                    icon: "🎙️",
+                    label: "语音服务",
+                    description: "配置语音识别 (STT) 和语音合成 (TTS)",
+                    button { class: "settings-action-btn", "配置 →" }
+                }
+
+                // ── 主题 ──
+                SettingsRow {
+                    icon: "🎨",
+                    label: "界面主题",
+                    description: "选择暗色、亮色或跟随系统主题",
+                    select {
+                        class: "theme-select",
+                        value: "{theme}",
+                        onchange: move |evt: FormEvent| theme.set(evt.value()),
+                        option { value: "system", "🌓 跟随系统" }
+                        option { value: "dark", "🌙 暗色模式" }
+                        option { value: "light", "☀️ 亮色模式" }
+                    }
+                }
+
+                // ── 账户 / GitHub OAuth ──
+                SettingsRow {
+                    icon: "🔗",
+                    label: "账户绑定",
+                    description: "通过 GitHub OAuth 登录同步数据和设置",
+                    if logged_in() {
+                        div { class: "account-status",
+                            span { class: "status-dot logged-in" }
+                            span { "已登录 GitHub" }
+                            button {
+                                class: "settings-action-btn logout",
+                                onclick: move |_| logged_in.set(false),
+                                "退出登录"
+                            }
+                        }
+                    } else {
+                        button {
+                            class: "github-login-btn",
+                            onclick: move |_| logged_in.set(true),
+                            "🐙 使用 GitHub 登录"
+                        }
+                    }
+                }
+
+                // ── 关于 ──
+                SettingsRow {
+                    icon: "ℹ️",
+                    label: "关于",
+                    description: "Hermes Operit App v0.1.0 · Pure Rust AI Assistant",
+                    span { class: "version-text", "v0.1.0" }
+                }
+
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Tests (preserved from original)
+// ──────────────────────────────────────────────────────────────────────────────
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -127,7 +258,7 @@ mod tests {
         let defaults = AppSettings::default();
         assert_eq!(defaults.model_config, "gpt-4");
         assert_eq!(defaults.theme, "system");
-        assert_eq!(defaults.language, "en");
+        assert_eq!(defaults.language, "zh-CN");
         assert!(defaults.api_keys.is_empty());
     }
 
@@ -136,7 +267,7 @@ mod tests {
         let mut settings = AppSettings::default();
         settings
             .api_keys
-            .insert("openai".into(), "sk-abcdefghijklmnopwxyz".into());
+            .insert("openai".into(), "sk-abc...wxyz".into());
         let display = format!("{}", settings);
         // Long keys are truncated: first 4 + "..." + last 4
         assert!(display.contains("sk-a...wxyz"));
