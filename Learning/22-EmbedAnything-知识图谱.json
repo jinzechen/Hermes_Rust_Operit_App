@@ -1,0 +1,151 @@
+{
+  "version": "0.1.0",
+  "kind": "codebase",
+  "project": {
+    "name": "embedanything",
+    "languages": [
+      "markdown",
+      "rust",
+      "toml"
+    ],
+    "frameworks": [],
+    "description": "embedanything project with 3 files across 3 languages. Complexity: Simple.",
+    "analyzed_at": "2026-07-18T11:34:38Z",
+    "git_commit_hash": "unknown"
+  },
+  "nodes": [
+    {
+      "id": "2e9d962a08321605",
+      "type": "config",
+      "name": "Cargo",
+      "file_path": "Cargo.toml",
+      "summary": "toml (39 lines)",
+      "tags": [
+        "toml"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "b335630551682c19",
+      "type": "document",
+      "name": "README",
+      "file_path": "README.md",
+      "summary": "markdown (593 lines)",
+      "tags": [
+        "markdown"
+      ],
+      "complexity": "moderate"
+    },
+    {
+      "id": "b1a35a68f14e6962",
+      "type": "file",
+      "name": "lib",
+      "file_path": "src/lib.rs",
+      "summary": "rust (1 lines)",
+      "tags": [
+        "rust"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "25a6634263c1b1f6",
+      "type": "module",
+      "name": "src",
+      "summary": "Directory: src",
+      "tags": [
+        "directory"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "25a6634263c1b1f6",
+      "target": "b1a35a68f14e6962",
+      "type": "contains",
+      "direction": "forward",
+      "description": "src contains src/lib.rs",
+      "weight": 0.3
+    }
+  ],
+  "layers": [
+    {
+      "id": "code",
+      "name": "Core Code",
+      "description": "Source code files and modules",
+      "node_ids": [
+        "b1a35a68f14e6962",
+        "25a6634263c1b1f6"
+      ]
+    },
+    {
+      "id": "config",
+      "name": "Configuration",
+      "description": "Configuration and settings files",
+      "node_ids": [
+        "2e9d962a08321605"
+      ]
+    },
+    {
+      "id": "docs",
+      "name": "Documentation",
+      "description": "Documentation and markdown files",
+      "node_ids": [
+        "b335630551682c19"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Project Overview",
+      "description": "This project contains 3 files organized across 1 directories. Start here to understand the high-level structure.",
+      "node_ids": [
+        "2e9d962a08321605",
+        "b335630551682c19",
+        "b1a35a68f14e6962"
+      ],
+      "language_lesson": "A knowledge graph represents code as interconnected nodes — files, functions, classes — with edges showing how they relate."
+    },
+    {
+      "order": 2,
+      "title": "Directory Structure",
+      "description": "The project has 1 top-level directories. Each contains related files grouped by purpose.",
+      "node_ids": [
+        "25a6634263c1b1f6"
+      ],
+      "language_lesson": "Contains edges (parent→child) show the file tree hierarchy in graph form."
+    },
+    {
+      "order": 3,
+      "title": "Source Code Files",
+      "description": "1 source code files found. These define the project's source code.",
+      "node_ids": [
+        "b1a35a68f14e6962"
+      ]
+    },
+    {
+      "order": 4,
+      "title": "Configuration Files",
+      "description": "1 configuration files found. These define the project's configuration.",
+      "node_ids": [
+        "2e9d962a08321605"
+      ]
+    },
+    {
+      "order": 5,
+      "title": "Documentation Files",
+      "description": "1 documentation files found. These define the project's documentation.",
+      "node_ids": [
+        "b335630551682c19"
+      ]
+    },
+    {
+      "order": 6,
+      "title": "Explore Connections",
+      "description": "Use the graph to trace imports, dependencies, and directory structure. Each edge type reveals a different relationship.",
+      "node_ids": [],
+      "language_lesson": "Imports edges show module dependencies. Contains edges show directory hierarchy. Together they reveal the project's architecture."
+    }
+  ]
+}
