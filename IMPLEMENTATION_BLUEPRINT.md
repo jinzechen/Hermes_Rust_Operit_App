@@ -10,86 +10,90 @@
 
 ### ★★★★★ (28份) — 直接复刻参考，融入核心架构
 
+▸ **三大项目及其周边优先排列**
+
 | # | 报告文件 | 对应仓库 | Stars | 实施角色 |
 |---|---------|---------|-------|---------|
-| 01 | `01-★★★★★-hermes-agent-rs-Rust Agent 引擎.md` | Lumio-Research/hermes-agent-rs | 72 | **Agent 引擎内核** — cargo add 直接依赖 |
-| 03 | `03-★★★★★-rtk-LLM Token优化代理.md` | rtk-ai/rtk | 71,641 | **API 成本优化** — HTTP 代理层，节省60-90% token |
-| 04 | `04-★★★★★-EmbedAnything-candle-本地ML.md` | huggingface/candle | 20,686 | **本地向量嵌入** — Model2Vec 8M参数, Android可用 |
-| 07 | `07-★★★★★-HermesApp-Shizuku系统权限.md` | SelectXn00b/HermesApp | 194 | **Android 系统权**限 — ADB级操作桥接 |
-| 08 | `08-★★★★★-HermesApp-前台服务.md` | SelectXn00b/HermesApp | 194 | **后台保活** — ForegroundService JNI桥接 |
-| 09 | `09-★★★★★-HermesApp-无障碍服务.md` | SelectXn00b/HermesApp | 194 | **屏幕交互** — AccessibilityService JNI桥接 |
-| 10 | `10-★★★★★-mistral.rs-纯Rust本地LLM推理.md` | EricLBuehler/mistral.rs | 7,492 | **离线推理** — feat gate, 纯Rust无C++依赖 |
-| 11 | `11-★★★★★-obscura-无头浏览器.md` | h4ckf0r0day/obscura | 19,392 | **浏览器引擎** — CDP Protocol, 内置为ToolHandler |
-| 12 | `12-★★★★★-openhuman-记忆系统.md` | tinyhumansai/openhuman | 35,015 | **记忆引擎** — tinycortex L0→L1→L2 摘要树 |
-| 13 | `13-★★★★★-Operit_MCPS-MCP插件集.md` | jinzechen/Operit_MCPS | — | **插件目录** — 5内置化 + 4保留MCP |
-| 14 | `14-★★★★★-Operit-Android宿主平台.md` | AAswordman/Operit | 5,800 | **功能清单** — 40+工具, Skills/MCP商店, 角色卡 |
-| 15 | `15-★★★★★-RMCP-官方MCP-Rust-SDK.md` | modelcontextprotocol/rust-sdk | 3,639 | **MCP 协议** — 替换自建 mcp/client.rs |
-| 16 | `16-★★★★★-Rust-网页搜索引擎.md` | — | — | **联网搜索** — reqwest+scraper, DuckDuckGo API |
-| 17 | `17-★★★★★-sherpa-onnx-语音引擎.md` | k2-fsa/sherpa-onnx | 13,630 | **语音引擎** — ASR/TTS/VAD, Android预编译.so |
-| 18 | `18-★★★★★-Understand_Anything_Rust-代码分析引擎.md` | jinzechen/Understand_Anything_Rust | — | **代码分析** — path dep已集成, 无需额外工作 |
-| 19 | `19-★★★★★-wasmer-沙盒执行.md` | wasmerio/wasmer | 20,904 | **代码沙盒** — Wasm运行时, 毫秒启动, Android支持 |
-| 20 | `20-★★★★★-Dioxus-RustUI框架.md` | DioxusLabs/dioxus | 36,804 | **UI框架** — 唯支一持Android的Rust UI |
-| 44 | `44-★★★★★-HermesApp-UI交互源码分析.md` | SelectXn00b/HermesApp | 194 | **UI布局参考** — 50+页面, Compose→Dioxus映射 |
-| 45 | `45-★★★★★-Operit原版UI交互源码分析.md` | AAswordman/Operit | 5,800 | **UI布局参考** — 原版三Tab商店+工具箱 |
-| 48 | `48-★★★★★-awesome-rust系统工具.md` | rust-unofficial/awesome-rust | 58,000 | **Rust生态** — 系统工具, 文件管理, 终端模拟 |
-| 50 | `50-★★★★★-clipboard-rs-剪贴板库.md` | — | — | **剪贴板** — Android剪贴板JNI桥接 |
-| 52 | `52-★★★★★-thClaws-功能重合RustAgent.md` | thClaws/thClaws | 1,166 | **竞品参考** — 三TabUI, MCP, Skills, Agent Teams |
-| 54 | `54-★★★★★-AwesomeRust完全补完.md` | — | — | **生态全景** — 1060项目扫描结果 |
-| 55 | `55-★★★★★-AwesomeRust最终补完.md` | — | — | **生态全景** — 补充遗漏项目 |
-| 59 | `59-★★★★★-goose-RustAI-Agent重合分析.md` | aaif-goose/goose | — | **竞品参考** — 15+Provider, Linux Foundation |
-| 60 | `60-★★★★★-claude-code-rust源码分析.md` | lorryjovens-hub/claude-code-rust | 1,667 | **架构参考** — 20模块划分, Tauri+TypeScript→Dioxus |
-| 65 | `65-★★★★★-AIAgent全生态聚合仓库.md` | — | — | **设计模式** — ReAct/Plan-Solve/Multi-Agent/RAG |
-| 66 | `66-★★★★★-MCP生态-headroom源码分析.md` | — | 59,000 | **Token压缩** — JSON压缩60-95%, 与rtk互补 |
+| 01 | `01-★★★★★-hermes-agent-rs-Rust Agent 引擎.md` | Lumio-Research/hermes-agent-rs | 72 | **[CORE] Agent 引擎内核** — cargo add 直接依赖 |
+| 04 | `04-★★★★★-HermesApp-Shizuku系统权限.md` | SelectXn00b/HermesApp | 194 | **[CORE] HermesApp Android系统权限** — ADB级操作 |
+| 05 | `05-★★★★★-HermesApp-前台服务.md` | SelectXn00b/HermesApp | 194 | **[CORE] HermesApp 后台保活** — ForegroundService |
+| 06 | `06-★★★★★-HermesApp-无障碍服务.md` | SelectXn00b/HermesApp | 194 | **[CORE] HermesApp 屏幕交互** — AccessibilityService |
+| 10 | `10-★★★★★-Operit_MCPS-MCP插件集.md` | jinzechen/Operit_MCPS | — | **[CORE] 用户自建** — 9个MCP插件目录 |
+| 11 | `11-★★★★★-Operit-Android宿主平台.md` | AAswordman/Operit | 5,800 | **[CORE] Operit 壳** — 40+工具, Skills/MCP商店 |
+| 15 | `15-★★★★★-Understand_Anything_Rust-代码分析引擎.md` | jinzechen/Understand_Anything_Rust | — | **[CORE] 用户自建** — path dep已集成 |
+| 18 | `18-★★★★★-HermesApp-UI交互源码分析.md` | SelectXn00b/HermesApp | 194 | **[CORE] HermesApp UI布局** — 50+页面参考 |
+| 19 | `19-★★★★★-Operit原版UI交互源码分析.md` | AAswordman/Operit | 5,800 | **[CORE] Operit UI布局** — 三Tab商店+工具箱 |
+| 02 | `02-★★★★★-rtk-LLM Token优化代理.md` | rtk-ai/rtk | 71,641 | API 成本优化 — HTTP 代理层，节省60-90% |
+| 03 | `03-★★★★★-EmbedAnything-candle-本地ML.md` | huggingface/candle | 20,686 | 本地向量嵌入 — Model2Vec 8M参数 |
+| 07 | `07-★★★★★-mistral.rs-纯Rust本地LLM推理.md` | EricLBuehler/mistral.rs | 7,492 | 离线推理 — feat gate, 纯Rust |
+| 08 | `08-★★★★★-obscura-无头浏览器.md` | h4ckf0r0day/obscura | 19,392 | 浏览器引擎 — CDP内置为ToolHandler |
+| 09 | `09-★★★★★-openhuman-记忆系统.md` | tinyhumansai/openhuman | 35,015 | 记忆引擎 — tinycortex L0→L1→L2 |
+| 12 | `12-★★★★★-RMCP-官方MCP-Rust-SDK.md` | modelcontextprotocol/rust-sdk | 3,639 | MCP 协议 — 替换自建 client.rs |
+| 13 | `13-★★★★★-Rust-网页搜索引擎.md` | — | — | 联网搜索 — reqwest+scraper |
+| 14 | `14-★★★★★-sherpa-onnx-语音引擎.md` | k2-fsa/sherpa-onnx | 13,630 | 语音引擎 — ASR/TTS/VAD |
+| 16 | `16-★★★★★-wasmer-沙盒执行.md` | wasmerio/wasmer | 20,904 | 代码沙盒 — Wasm运行时 |
+| 17 | `17-★★★★★-Dioxus-RustUI框架.md` | DioxusLabs/dioxus | 36,804 | UI框架 — 唯一支持Android的Rust UI |
+| 20 | `20-★★★★★-awesome-rust系统工具.md` | rust-unofficial/awesome-rust | 58,000 | Rust生态 — 系统工具 |
+| 21 | `21-★★★★★-clipboard-rs-剪贴板库.md` | — | — | 剪贴板 — Android JNI桥接 |
+| 22 | `22-★★★★★-thClaws-功能重合RustAgent.md` | thClaws/thClaws | 1,166 | 竞品参考 — 三TabUI/MCP/Skills |
+| 23 | `23-★★★★★-AwesomeRust完全补完.md` | — | — | 生态全景 — 1060项目扫描 |
+| 24 | `24-★★★★★-AwesomeRust最终补完.md` | — | — | 生态全景 — 补充遗漏 |
+| 25 | `25-★★★★★-goose-RustAI-Agent重合分析.md` | aaif-goose/goose | — | 竞品参考 — 15+Provider, LF项目 |
+| 26 | `26-★★★★★-claude-code-rust源码分析.md` | lorryjovens-hub/claude-code-rust | 1,667 | 架构参考 — 20模块 |
+| 27 | `27-★★★★★-AIAgent全生态聚合仓库.md` | — | — | 设计模式 — ReAct/Multi-Agent/RAG |
+| 28 | `28-★★★★★-MCP生态-headroom源码分析.md` | — | 59,000 | Token压缩 — 与rtk互补 |
 
 ### ★★★★ (22份) — 重要参考，按需集成
 
+▸ **HermesApp相关优先**
+
 | # | 报告 | 实施角色 |
 |---|------|---------|
-| 21 | `21-★★★★-AndroidRust生态-关键词驱动.md` | Android Rust生态全景 → **选型验证** |
-| 22 | `22-★★★★-boa-嵌入式JS引擎.md` | JS引擎 → **可选**（Skills脚本执行） |
-| 23 | `23-★★★★-cc-switch-AIAgent桌面中心.md` | 桌面Agent参考 → **架构思路** |
-| 24 | `24-★★★★-cron-定时任务生态.md` | Rust定时任务 → **cronjob工具实现** |
-| 25 | `25-★★★★-hermes-agent-ultra-安全层.md` | 安全层增强 → **guard.rs + redact.rs 集成** |
-| 26 | `26-★★★★-HermesApp-Kotlin参考实现.md` | Kotlin实现对照 → **功能清单验证** |
-| 27 | `27-★★★★-HermesApp-通知系统.md` | Android通知 → **Notification JNI桥接** |
-| 28 | `28-★★★★-openinterpreter-编码代理.md` | 代码解释器 → **沙盒场景参考** |
-| 29 | `29-★★★★-qdrant-向量数据库.md` | 向量数据库 → **备选**（tinycortex已含向量） |
-| 30 | `30-★★★★-rustdesk-Android编译参考.md` | Android构建参考 → **构建配置** |
-| 31 | `31-★★★★-Rust-密钥管理.md` | 密钥安全 → **credential_guard集成** |
-| 32 | `32-★★★★-Rust-事件总线生态.md` | 事件总线 → **内部通信（可选）** |
-| 33 | `33-★★★★-Rust-终端执行.md` | 终端模拟 → **terminal工具实现** |
-| 34 | `34-★★★★-Tauri-Rust桌面框架.md` | 桌面方案 → **备选**（Dioxus已选） |
-| 51 | `51-★★★★-moka-高性能缓存.md` | 高性能缓存 → **moka = "0.12" 已规划** |
-| 56 | `56-★★★★-piccolo-LuaVM源码分析.md` | Lua运行时 → **可选**（Skills脚本） |
-| 57 | `57-★★★★-tantivy-全文搜索引擎.md` | 全文搜索 → **本地FTS索引** |
-| 58 | `58-★★★★-rhai-嵌入式脚本引擎.md` | 嵌入式脚本 → **可选**（Rhai比Lua更适合Rust） |
-| 61 | `61-★★★★-MiMo-Code-当前Provider分析.md` | Provider分析 → **已有GenericProvider** |
-| 62 | `62-★★★★-openclaw-小龙虾架构分析.md` | Agent架构参考 → **模块设计验证** |
-| 63 | `63-★★★★-ZeptoClaw-轻量RustAgent源码分析.md` | 轻量Agent → **25模块对照, 4MB二进制** |
-| 64 | `64-★★★★-awesome-claws-RustAgent生态全发现.md` | Agent生态全景 → **功能对标** |
+| 34 | `34-★★★★-HermesApp-Kotlin参考实现.md` | **[CORE]** Kotlin实现对照 → 功能清单验证 |
+| 35 | `35-★★★★-HermesApp-通知系统.md` | **[CORE]** Android通知 → JNI桥接 |
+| 29 | `29-★★★★-AndroidRust生态-关键词驱动.md` | Android Rust生态全景 |
+| 30 | `30-★★★★-boa-嵌入式JS引擎.md` | JS引擎 → 可选（Skills脚本） |
+| 31 | `31-★★★★-cc-switch-AIAgent桌面中心.md` | 桌面Agent参考 |
+| 32 | `32-★★★★-cron-定时任务生态.md` | cronjob工具实现 |
+| 33 | `33-★★★★-hermes-agent-ultra-安全层.md` | guard.rs + redact.rs 集成 |
+| 36 | `36-★★★★-openinterpreter-编码代理.md` | 代码解释器 → 沙盒参考 |
+| 37 | `37-★★★★-qdrant-向量数据库.md` | 向量数据库 → 备选 |
+| 38 | `38-★★★★-rustdesk-Android编译参考.md` | Android构建参考 |
+| 39 | `39-★★★★-Rust-密钥管理.md` | credential_guard集成 |
+| 40 | `40-★★★★-Rust-事件总线生态.md` | 内部通信（可选） |
+| 41 | `41-★★★★-Rust-终端执行.md` | terminal工具实现 |
+| 42 | `42-★★★★-Tauri-Rust桌面框架.md` | 桌面方案 → 备选 |
+| 43 | `43-★★★★-moka-高性能缓存.md` | moka已规划 |
+| 44 | `44-★★★★-piccolo-LuaVM源码分析.md` | Lua运行时 → 可选 |
+| 45 | `45-★★★★-tantivy-全文搜索引擎.md` | 本地FTS索引 |
+| 46 | `46-★★★★-rhai-嵌入式脚本引擎.md` | Rhai → 可选 |
+| 47 | `47-★★★★-MiMo-Code-当前Provider分析.md` | Provider → 已有Generic |
+| 48 | `48-★★★★-openclaw-小龙虾架构分析.md` | Agent架构参考 |
+| 49 | `49-★★★★-ZeptoClaw-轻量RustAgent源码分析.md` | 轻量Agent → 25模块 |
+| 50 | `50-★★★★-awesome-claws-RustAgent生态全发现.md` | Agent生态全景 |
 
 ### ★★★ (9份) — 参考了解
 
 | # | 报告 | 说明 |
 |---|------|------|
-| 35 | `35-★★★-Fabric-AI模式库.md` | AI Patterns → 参考 |
-| 36 | `36-★★★-nushell-结构化管道.md` | Shell → terminal工具灵感 |
-| 37 | `37-★★★-shadowsocks-网络模式.md` | 网络 → 代理配置参考 |
-| 38 | `38-★★★-TabbyML-代码助手.md` | 代码补全 → 可选功能 |
-| 39 | `39-★★★-yazi-文件管理器.md` | 文件管理UI → 参考 |
-| 46 | `46-★★★-awesome-rust精选新发现.md` | Rust生态新发现 |
-| 47 | `47-★★★-awesome-rust终端和GUI方案.md` | UI方案对比 |
-| 49 | `49-★★★-awesome-rust完全分析.md` | Rust生态全景 |
-| 53 | `53-★★★-Bamboo-octomind功能重合.md` | 功能重合分析 |
+| 51 | `51-★★★-Fabric-AI模式库.md` | AI Patterns |
+| 52 | `52-★★★-nushell-结构化管道.md` | Shell参考 |
+| 53 | `53-★★★-shadowsocks-网络模式.md` | 代理配置 |
+| 54 | `54-★★★-TabbyML-代码助手.md` | 代码补全 |
+| 55 | `55-★★★-yazi-文件管理器.md` | 文件管理UI |
+| 56 | `56-★★★-awesome-rust精选新发现.md` | Rust生态 |
+| 57 | `57-★★★-awesome-rust终端和GUI方案.md` | UI方案 |
+| 58 | `58-★★★-awesome-rust完全分析.md` | Rust生态全景 |
+| 59 | `59-★★★-Bamboo-octomind功能重合.md` | 功能重合分析 |
 
 ### ★★ (4份) — 了解
 
 | # | 报告 | 说明 |
 |---|------|------|
-| 40 | `40-★★-ds-free-api-DeepSeek代理.md` | DeepSeek代理 |
-| 41 | `41-★★-gluesql-嵌入式SQL.md` | 嵌入式SQL（已有redb+SQLite） |
-| 42 | `42-★★-oxideterm-AI终端.md` | AI终端 |
-| 43 | `43-★★-servo-ds4-AgentS-openclaw.md` | 多项聚合 |
+| 60 | `60-★★-ds-free-api-DeepSeek代理.md` | DeepSeek代理 |
+| 61 | `61-★★-gluesql-嵌入式SQL.md` | 嵌入式SQL |
+| 62 | `62-★★-oxideterm-AI终端.md` | AI终端 |
+| 63 | `63-★★-servo-ds4-AgentS-openclaw.md` | 多项聚合 |
 
 ---
 
