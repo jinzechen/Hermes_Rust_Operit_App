@@ -97,7 +97,10 @@ impl GitHubOAuth {
             .request(&http_client)?;
 
         let access_token = token_result.access_token().secret().clone();
-        let token_type = format!("{}", token_result.token_type());
+        let token_type = match token_result.token_type() {
+            oauth2::basic::BasicTokenType::Bearer => "bearer".to_string(),
+            _ => "unknown".to_string(),
+        };
         let scope = token_result.scopes().map(|scopes| {
             scopes
                 .iter()

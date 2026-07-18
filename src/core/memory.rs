@@ -95,22 +95,23 @@ impl MemoryStore {
             .begin_read()
             .context("Failed to begin read transaction")?;
 
-        let raw = {
+        let raw: Vec<u8> = {
             let table = read_txn
                 .open_table(SESSIONS_TABLE)
                 .context("Failed to open sessions table")?;
 
-            match table.get(session_id) {
-                Ok(Some(data)) => data.value().to_vec(),
+            let result = table.get(session_id);
+            match result {
+                Ok(Some(guard)) => {
+                    let bytes: &[u8] = guard.value();
+                    bytes.to_vec()
+                }
                 Ok(None) => return Ok(Vec::new()),
                 Err(e) => return Err(anyhow::anyhow!("Failed to read session: {}", e)),
             }
         };
 
-        let messages: Vec<Message> =
-            serde_json::from_slice(&raw).context("Failed to deserialize session messages")?;
-
-        Ok(messages)
+        serde_json::from_slice(&raw).context("Failed to deserialize session messages")
     }
 
     // ── Preferences ───────────────────────────────────────────────────────
@@ -142,13 +143,14 @@ impl MemoryStore {
             .begin_read()
             .context("Failed to begin read transaction")?;
 
-        let value = {
+        let value: Option<String> = {
             let table = read_txn
                 .open_table(PREFERENCES_TABLE)
                 .context("Failed to open preferences table")?;
 
-            match table.get(key) {
-                Ok(Some(v)) => Some(v.value().to_string()),
+            let result = table.get(key);
+            match result {
+                Ok(Some(guard)) => Some(guard.value().to_string()),
                 Ok(None) => None,
                 Err(e) => return Err(anyhow::anyhow!("Failed to read preference: {}", e)),
             }
