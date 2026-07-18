@@ -193,9 +193,9 @@ Output/json/hermes-agent-rs-engine.json    — 380KB
 ...共 38 个 JSON 分析文件
 ```
 
-## 五、新完成的 UI 层分析（报告 44）
+## 五、新完成的 UI 层分析（报告 44-45）
 
-### HermesApp UI 完整分析（12 源文件，~450KB）
+### 5.1 HermesApp UI 完整分析（12 源文件，~450KB）
 
 | 文件 | 大小 | 内容 |
 |------|------|------|
@@ -210,7 +210,19 @@ Output/json/hermes-agent-rs-engine.json    — 380KB
 | EnhancedAIService.kt | **99KB** | AI 服务交互层 |
 | ChatRuntimeHolder.kt | 7.5KB | 运行时管理 |
 
-### UI 架构
+### 5.2 Operit 原版 UI 分析（7 源文件，~260KB）
+
+| 文件 | 大小 | 与 HermesApp 对比 |
+|------|------|------------------|
+| OperitApp.kt | **23KB** | 大 6KB，功能更全 |
+| MainActivity.kt | **36KB** | HermesApp 无此文件 |
+| EnhancedAIService.kt | **141KB** | 大 42KB，+42% 功能 |
+| MemoryLibrary.kt | 38KB | 小 8KB |
+| 特有模块 | `permissions/` + `recovery/` | HermesApp 无 |
+
+**关键结论：Operit 是功能最全的上游版本，Hermes_Rust_Operit_App 应以 Operit 的功能清单为目标。**
+
+### 5.3 UI 架构
 
 ```
 Dioxus UI (Rust 复刻):
