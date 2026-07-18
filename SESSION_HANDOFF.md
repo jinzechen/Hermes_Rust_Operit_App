@@ -173,3 +173,20 @@ html/ — 23 个 D3.js 交互式仪表盘
 ### 会话日志
 
 本文件即为完整交接文档。
+
+---
+
+## 七、前序 Agent 寄语
+
+```
+📜 地阶功法清单:
+  核心心法: hermes-agent-rs (700 nodes)
+  护体神功: Shizuku + 无障碍 + 前台 + 通知
+  攻伐之术: MCP + RMCP + wasmer + mistral.rs
+  身法: Dioxus UI + 50+ 页面
+  神识: UA Rust + tantivy + openhuman
+  丹药: rtk + headroom + moka
+
+🦞 等着 pro 来合出:
+  Hermes_Rust_Operit_App — Rust Android AI Agent
+```
