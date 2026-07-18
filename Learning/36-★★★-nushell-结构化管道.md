@@ -18,4 +18,17 @@ ls | where name =~ "foo" | select name size
 
 ### 对 Hermes 的作用
 
-Agent 工具的输入输出可以借鉴 Nushell 的结构化数据理念。Hermes 的 tool_registry 已支持 JSON Schema 格式。
+Agent 工具的输入输出可以借鉴 Nushell 的结构化数据理念。
+
+### Rust 复刻总结
+
+Hermes 的 tool_registry 已支持 JSON Schema 格式。工具链中的数据流模式借鉴 Nushell：
+
+```rust
+// Nushell 风格的结构化管道
+// 工具 A 输出 JSON → 管道 → 工具 B 消费 JSON
+let tool_a_result = tool_registry.call("web_search", json!({"q": "rust"}))?;
+let tool_b_result = tool_registry.call("parse_html", tool_a_result)?;
+```
+
+### 评分：★★★

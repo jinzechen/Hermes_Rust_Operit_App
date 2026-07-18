@@ -16,4 +16,15 @@ yazi (Rust, 40K⭐)
 └── adapters/   → 预览器/打开器
 ```
 
-Hermes 已有 `filesystem.rs` (12.5KB)。yazi 的异步 I/O 设计可参考但非必须。
+Hermes 已有 `filesystem.rs` (12.5KB)。
+
+### Rust 复刻总结
+
+yazi 的异步 I/O、Lua 插件系统设计可参考但不直接使用。Hermes 的 file.rs 已满足需求：
+
+```rust
+// Hermes 现有文件操作（已覆盖 yazi 核心能力）
+tools/file.rs — 读/写/搜索/复制/移动/删除
+```
+
+### 评分：★★★
