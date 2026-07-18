@@ -1,36 +1,34 @@
-# 13 — TabbyML：自托管代码助手
+# TabbyML — 自托管代码助手 UA 源码分析
 
-> **仓库**：https://github.com/TabbyML/tabby (33,728⭐, Rust)  
-> **核心能力**：自托管 AI 代码补全（GitHub Copilot 替代）  
-> **Hermes_Rust_Operit_App 评分**：★★★（可选集成，非核心）
+> **UA Rust 分析**：Cargo.toml (2.8KB+2.6KB)  
+> **仓库**：https://github.com/TabbyML/tabby (33K⭐, Rust)  
+> **Hermes_Rust_Operit_App 评分**：★★★（candle 推理设计参考）
 
 ---
 
 ## 一、架构
 
 ```
-tabby (Rust, 33K⭐)
-├── cli/       → 命令行
-├── server/    → HTTP API（补全+聊天）
-├── core/      → candle/llama.cpp 推理
-├── web/       → React UI
-└── lib/       → 共享库
+tabby (33K⭐, Rust workspace)
+├── Cargo.toml (2.8KB) — workspace
+├── crates/tabby/ — AI 代码补全核心
+│   ├── Cargo.toml (2.6KB)
+│   └── 依赖: candle, tokenizers, axum, reqwest
+├── cli/ — CLI 入口
+├── server/ — HTTP API
+└── web/ — React UI
 ```
 
-## 二、对 Hermes_Rust_Operit_App 的作用
+## 二、对 Hermes 的作用
 
-| 可复用点 | 说明 |
-|----------|------|
-| Candle 推理后端 | 与 EmbedAnything 同方案 |
-| 补全 API | 可为 Hermes 添加代码补全能力 |
+| 能力 | TabbyML | Hermes |
+|------|---------|--------|
+| 推理后端 | candle | candle (已有) |
+| 补全 API | axum | axum (可加) |
+| 模型管理 | hf-hub | hf-hub (已有) |
 
-### Rust 复刻总结
-
-TabbyML 的 candle 推理后端设计与 Hermes 已有的 EmbedAnything 一致：
-
-```rust
-// 复用 Hermes 已有的 candle 推理
-// TabbyML 的代码补全 API 可作为可选功能
-```
+**关键**：TabbyML 的 candle 推理后端设计与 Hermes 的 EmbedAnything 一致，可互相参考。
 
 ### 评分：★★★
+
+TabbyML 的 candle 推理设计已覆盖，其核心价值（代码补全）与 Agent 应用有重叠但非核心。
