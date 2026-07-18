@@ -3,250 +3,173 @@
 > **生成时间**：2026-07-18  
 > **前序 Agent**：deepseek-v4-flash  
 > **项目**：Hermes_Rust_Operit_App  
-> **分析工具**：Understand_Anything_Rust（本地编译, ua.exe）
+> **分析工具**：Understand_Anything_Rust（ua.exe, 本地编译）  
+> **工具位置**：`D:\Hermes_Agent_Desktop\Hermes_Download\Understand_Anything_Rust\target\release\ua.exe`
 
 ---
 
-## 一、已完成工作总览
+## 一、总体产出
 
-### 1.1 UA Rust 分析材料（98 个文件）
+### 1.1 Learning/ 报告（63 份）
 
-```
-Output/
-├── json/  (38 个) — 知识图谱原始数据
-├── md/    (38 个) — Markdown 分析报告
-└── html/  (22 个) — D3.js 交互式仪表盘
-```
-
-已分析的代码库（40 个 _analysis 目录）：
-
-| 分类 | 项目 | 分析方式 | 深度 |
-|------|------|---------|------|
-| 核心 | hermes-agent-rs (350 Rust文件/700节点) | UA Rust 全量 | ★★★★★ |
-| 核心 | Operit (Kotlin, 9模块) | 手动分析 settings.gradle | ★★★★★ |
-| 核心 | HermesApp (233KB Kotlin 源码) | 6个关键文件下载+UA扫描 | ★★★★★ |
-| 自建 | Understand_Anything_Rust (自分析) | UA Rust 自扫描 | ★★★★★ |
-| 自建 | Operit_MCPS (659 Rust文件/1505节点) | UA Rust 全量 | ★★★★★ |
-| 桥接 | Shizuku (12KB+16KB Kotlin) | 下载+UA扫描 | ★★★★★ |
-| 桥接 | 无障碍 (6KB+33KB Kotlin) | 下载+UA扫描 | ★★★★★ |
-| 桥接 | 前台服务 (80KB Kotlin) | 下载+UA扫描 | ★★★★★ |
-| 桥接 | 通知 (4KB+4KB Kotlin) | 下载+UA扫描 | ★★★★ |
-| 关键词 | wasmer (20K⭐, Rust) | 下载 Cargo.toml+lib.rs | ★★★★★ |
-| 关键词 | mistral.rs (7.5K⭐, Rust) | 下载 Cargo.toml+README | ★★★★★ |
-| 关键词 | RMCP (3.6K⭐, Rust官方MCP SDK) | 下载6个源文件+UA | ★★★★★ |
-| 关键词 | boa_engine (7.4K⭐, Rust JS引擎) | 下载 Cargo.toml+UA | ★★★★ |
-| 关键词 | Tauri (101K⭐, Rust桌面框架) | 简要分析 | ★★★★ |
-| 关键词 | rtk (71K⭐, Token优化) | 下载分析 | ★★★ |
-| 其他 | obscura/openhuman/qdrant/gluesql/fabric等 | 逐一下载+UA | 各★★-★★★★ |
-
-### 1.2 学习材料（40 份 MD 报告）
-
-```
-Learning/
-├── 01-20: ★★★★★ 核心（17份） — 源码级分析 + Rust 复刻方案
-├── 21-34: ★★★★ 重要（14份） — 详细分析 + Rust 复刻方案
-├── 35-39: ★★★ 参考（5份） — 简要分析
-└── 40-43: ★★ 了解（4份） — 简介
-```
-
-### 1.3 所有报告均包含 Rust 复刻方案
-
-格式示例：
-
-```markdown
-### Rust 复刻总结
-
-```rust
-// 实际 Rust 代码片段
-let result = some_library::function().await?;
-```
-
-### 评分：★★★★★
-```
-
----
-
-## 二、核心分析结果摘要
-
-### 2.1 hermes-agent-rs（最重要的核心发现）
-
-```
-18 个 crate, 352 Rust 文件, 700 节点
-agent_loop.rs: 7,001 行 — Agent 主循环
-memory_manager.rs: 657 行 + 8 种记忆插件
-hermes-tools: 35 个工具 / 69 文件
-sub_agent_orchestrator: 617 行 — 子 Agent
-smart_model_routing: 419 行 — 智能路由
-
-整合方案：直接 cargo add 以下 crate:
-  hermes-core, hermes-agent, hermes-tools, hermes-mcp, hermes-config
-  不需要: hermes-cli, hermes-gateway, hermes-server
-```
-
-### 2.2 HermesApp Android 桥接层
-
-```
-需要自己实现的 JNI 桥接（参考 Kotlin 源码）:
-
-android-bridge/
-├── jni.rs           ← jni-rs 初始化
-├── accessibility.rs ← 屏幕读取+点击（参考 AccessibilityUITools.kt 33KB）
-├── shizuku.rs       ← 系统权限（参考 ShizukuInstaller 12KB）
-├── foreground.rs    ← 后台保活（参考 AIForegroundService 80KB）
-├── notification.rs  ← 通知（参考 4KB+4KB）
-├── termux.rs        ← Ubuntu 通道
-└── filesystem.rs    ← SAF 文件系统
-```
-
-### 2.3 关键词项目发现
-
-| 关键词 | 找到的 Rust 项目 | 用途 | 优先级 |
-|--------|----------------|------|--------|
-| 沙盒执行 | wasmer (20K⭐) | WebAssembly 沙盒 | ★★★★★ |
-| 本地推理 | mistral.rs (7.5K⭐) | 纯 Rust LLM 推理 | ★★★★★ |
-| MCP SDK | RMCP (3.6K⭐) | 官方 MCP Rust 客户端 | ★★★★★ |
-| JS 引擎 | boa_engine (7.4K⭐) | 用户自定义脚本 | ★★★★ |
-| 桌面框架 | Tauri (101K⭐) | 桌面端方案 | ★★★★ |
-
----
-
-## 三、待继续工作
-
-### 3.1 还未深入的关键词
-
-| 关键词 | 来源报告 | 推荐项目 | 优先级 |
-|--------|---------|---------|--------|
-| llama.cpp-rs | Operit `:llama` 模块 | llama-cpp-2 (crates.io) | ★★★★★ |
-| MNN 推理 | Operit `:mnn` 模块 | 阿里 MNN (C++) | ★★★★ |
-| ONNX 运行时 | EmbedAnything 关键词 | onnxruntime-rs | ★★★★ |
-| Telegram bot | hermes-gateway | teloxide/tgr-rs | ★★★ |
-| 向量嵌入 | qdrant 关键词 | fastembed-rs | ★★★★ |
-| 工作流引擎 | HermesApp WorkflowExecutor | 需自建 | ★★★★ |
-| 代码编辑器 | zed (87K⭐) | 参考 AI 补全 | ★★★ |
-
-### 3.2 需要补充 Rust 复刻方案的文件
-
-以下报告已有 UA 分析但需要补充 Rust 复刻代码：
-- 23-cc-switch → 已有，可加强
-- 29-qdrant → 已有
-- 30-rustdesk → 已有
-- 所有 ★★ 文件需补 Rust 复刻
-
-### 3.3 分类整理的总体架构
-
-```
-Hermes_Rust_Operit_App 技术栈:
-
-[UI]          Dioxus (dioxus-native)
-[Agent引擎]   hermes-agent-rs (agent_loop/ToolRegistry/MemoryManager)
-[工具]        hermes-tools (35 个工具)
-[MCP]         RMCP (官方 MCP Rust SDK) + Operit_MCPS
-[记忆]        tinycortex (openhuman) + redb
-[本地推理]    mistral.rs (candle) + sherpa-onnx
-[沙盒]        wasmer
-[JS脚本]      boa_engine
-[语音]        sherpa-onnx
-[Token优化]   rtk (HTTP 代理)
-[Android桥接] jni-rs + 自建 android-bridge/
-[安全]        hermes-agent-ultra 的 guard + redact
-```
-
----
-
-## 四、学习来源索引
-
-### 4.1 从 HermesApp 源码提取的 Android 功能
-
-| 功能 | 源码文件 | 学习报告 |
-|------|---------|---------|
-| Shizuku 权限 | ShizukuInstaller.kt (12KB) + ShizukuAuthorizer.kt (16KB) | 07-★★★★★ |
-| 无障碍 | AccessibilityUITools.kt (33KB) + ShellExecutor (6KB) + ProviderInstaller (6KB) | 09-★★★★★ |
-| 前台服务 | AIForegroundService.kt (80KB) + ForegroundServiceCompat.kt (2KB) | 08-★★★★★ |
-| 通知 | OperitNotificationListenerService.kt (4KB) + SkillRecorderNotification.kt (4KB) | 27-★★★★ |
-| 工具执行 | ToolExecutionManager.kt (28KB) | 26-★★★★ |
-| 13 LLM Provider | AIServiceFactory.kt (21KB) | 26-★★★★ |
-
-### 4.2 从 hermes-agent-rs 提取的 Rust 能力
-
-| 能力 | 源码文件 | Rust 复刻 |
-|------|---------|----------|
-| Agent 循环 | agent_loop.rs (7,001行) | cargo add hermes-agent |
-| 35 个工具 | tools/*.rs (35文件) | cargo add hermes-tools |
-| 8 种记忆 | memory_plugins/*.rs | cargo add hermes-agent |
-| MCP 客户端 | hermes-mcp (6文件, 3.4K) | cargo add hermes-mcp → RMCP |
-| 子 Agent | sub_agent_orchestrator.rs (617行) | 内置 |
-| 智能路由 | smart_model_routing.rs (419行) | 内置 |
-
-### 4.3 UA Rust 分析输出索引
-
-```
-Output/json/01-hermes-agent-rs.json        — 381KB, 700 nodes
-Output/json/05-operit-mcps.json            — 897KB, 1505 nodes
-Output/json/hermesapp-shizuku.json         — 2.5KB, 5 nodes
-Output/json/hermesapp-access.json          — 5KB
-Output/json/hermesapp-foreground.json      — 5KB
-Output/json/hermesapp-ui-full.json         — 450KB, 12 UI 源文件
-Output/json/rmcp-sdk.json                  — 5KB, 9 nodes
-Output/json/wasmer-sandbox.json            — 3KB
-Output/json/mistralrs.json                 — 3KB, 6 nodes
-Output/json/hermes-agent-rs-engine.json    — 380KB
-...共 38 个 JSON 分析文件
-```
-
-## 五、新完成的 UI 层分析（报告 44-45）
-
-### 5.1 HermesApp UI 完整分析（12 源文件，~450KB）
-
-| 文件 | 大小 | 内容 |
+| 星级 | 数量 | 内容 |
 |------|------|------|
-| OperitApp.kt | 17KB | 应用入口 + 导航框架 |
-| OperitScreens.kt | **72KB** | 50+ 页面定义 |
-| AIChatScreen.kt | **93KB** | 对话主界面 |
-| ChatScreenContent.kt | 50KB | 聊天内容 |
-| SettingsScreen.kt | 26KB | 25+ 设置页面 |
-| UserPreferencesSettingsScreen.kt | **68KB** | 用户偏好 |
-| UnifiedMarketScreen.kt | 29KB | 三 Tab 商店 |
-| ToolboxScreen.kt | 31KB | 工具箱 |
-| EnhancedAIService.kt | **99KB** | AI 服务交互层 |
-| ChatRuntimeHolder.kt | 7.5KB | 运行时管理 |
+| ★★★★★ | 28 | 核心项目源码级分析 + Rust 复刻方案 |
+| ★★★★ | 22 | 重要生态项目详细分析 |
+| ★★★ | 9 | 参考项目 |
+| ★★ | 4 | 了解项目 |
 
-### 5.2 Operit 原版 UI 分析（7 源文件，~260KB）
+### 1.2 UA Rust 分析材料（171 个文件 / 8.3MB）
 
-| 文件 | 大小 | 与 HermesApp 对比 |
-|------|------|------------------|
-| OperitApp.kt | **23KB** | 大 6KB，功能更全 |
-| MainActivity.kt | **36KB** | HermesApp 无此文件 |
-| EnhancedAIService.kt | **141KB** | 大 42KB，+42% 功能 |
-| MemoryLibrary.kt | 38KB | 小 8KB |
-| 特有模块 | `permissions/` + `recovery/` | HermesApp 无 |
+| 格式 | 数量 | 用途 |
+|------|------|------|
+| JSON | 74 | 知识图谱原始数据（nodes/edges/layers） |
+| MD | 74 | 人机可读分析报告 |
+| HTML | 23 | D3.js 交互式仪表盘 |
 
-**关键结论：Operit 是功能最全的上游版本，Hermes_Rust_Operit_App 应以 Operit 的功能清单为目标。**
+### 1.3 源代码分析目录（27 个有实际源码的 _analysis 目录）
 
-### 5.3 UI 架构
+涵盖：hermesapp-shizuku, hermesapp-access, hermesapp-foreground, hermesapp-notification, hermesapp-ui-full, operit-ui, claude-code-rust, clipboard-rs, headroom, mistralrs, moka, rmcp, tantivy, thclaws, wasmer, zeptoclaw, piccolo, rhai, cc-switch 等。
 
-```
-Dioxus UI (Rust 复刻):
-src/ui/
-├── app.rs        → OperitApp 等效
-├── chat.rs       → AIChatScreen (93KB)
-├── store.rs      → 三 Tab 商店 (Artifact/Skill/MCP)
-├── toolbox.rs    → 工具列表
-├── settings.rs   → 设置
-├── memory.rs     → 记忆库
-└── auth.rs       → GitHub OAuth
-```
+### 1.4 克隆的完整仓库（3 个）
 
-## 六、重要提示
+| 仓库 | Rust 文件数 | 位置 |
+|------|------------|------|
+| hermes-agent-rs | 352 | `D:\Hermes_Agent_Desktop\Hermes_Download\hermes-agent-rs` |
+| Operit_MCPS | 659 | `D:\Hermes_Agent_Desktop\Hermes_Download\Operit_MCPS` |
+| Understand_Anything_Rust | 自分析 | `D:\Hermes_Agent_Desktop\Hermes_Download\Understand_Anything_Rust` |
+
+---
+
+## 二、核心分析结果（★★★★★ 28 份）
+
+### 2.1 三大核心项目
+
+| # | 报告 | 分析方式 | 关键数据 |
+|---|------|---------|---------|
+| 01 | hermes-agent-rs | UA Rust 全量扫描克隆仓库 | 352 Rust 文件, 700 nodes, 694 edges |
+| 02 | Operit Android 壳 | Kotlin 源码 + build.gradle 分析 | 9 Gradle 模块, 5.8K⭐ |
+| 12 | HermesApp Kotlin | 6 个关键 Kotlin 文件下载 | 233KB 源码, 13 个 LLM Provider |
+
+### 2.2 Android 桥接层
+
+| # | 功能 | 源码大小 | 实现 |
+|---|------|---------|------|
+| 11 | Shizuku 系统权限 | ShizukuInstaller 12KB + ShizukuAuthorizer 16KB | JNI 桥接 |
+| 09 | 无障碍服务 | AccessibilityUITools 33KB + Provider 6KB + ShellExecutor 6KB | JNI 桥接 |
+| 08 | 前台服务 | AIForegroundService 80KB + ServiceCompat 2KB | JNI 桥接 |
+| 27 | 通知系统 | NotificationListener 4KB + SkillRecorderNotification 4KB | JNI 桥接 |
+| 50 | 剪贴板 | clipboard-rs lib.rs (3.3KB) + android.rs | clipboard-rs + JNI |
+
+### 2.3 UI 交互层
+
+| # | 报告 | 源码 | 数据 |
+|---|------|------|------|
+| 44 | HermesApp UI | 12 个源文件 | ~450KB, 50+ 页面 |
+| 45 | Operit 原版 UI | 7 个源文件 | EnhancedAIService 141KB |
+
+### 2.4 Rust AI Agent 生态
+
+| # | 项目 | Stars | 源码 |
+|---|------|-------|------|
+| 52 | thClaws | 1,166⭐ | lib.rs 95KB, 三 Tab+MCP+Skills |
+| 60 | claude-code-rust | 1,667⭐ | main.rs 42KB, 20 个模块 |
+| 63 | ZeptoClaw | 644⭐ | lib.rs 3.5KB, 25+ 模块, 4MB |
+| 59 | goose | Linux Foundation | Cargo.toml 7.8KB, 15+ Provider |
+
+### 2.5 MCP 生态
+
+| # | 项目 | Stars | 说明 |
+|---|------|-------|------|
+| 15 | RMCP 官方 SDK | 3,639⭐ | Rust MCP 标准实现 |
+| 04 | Operit_MCPS | 用户自建 | 9 个 MCP 插件, 659 Rust 文件 |
+| 66 | awesome-mcp-servers | 90K⭐ | MCP 服务器大全 |
+| 66 | headroom | 59K⭐ | Token 压缩引擎 |
+
+### 2.6 关键词/Rust 生态
+
+| # | 项目 | 用途 | 评分 |
+|---|------|------|------|
+| 19 | wasmer | 沙盒执行 | ★★★★★ |
+| 10 | mistral.rs | 纯 Rust LLM 推理 | ★★★★★ |
+| 17 | sherpa-onnx | 语音引擎 | ★★★★★ |
+| 20 | Dioxus | UI 框架 | ★★★★★ |
+| 07 | openhuman | 记忆引擎 | ★★★★★ |
+| 08 | EmbedAnything+candle | 本地 ML | ★★★★★ |
+| 03 | rtk | Token 优化 | ★★★★★ |
+| 06 | obscura | 无头浏览器 | ★★★★★ |
+| 16 | Rust 网页搜索 | 联网能力 | ★★★★★ |
+| 18 | UA Rust | 代码分析 | ★★★★★ |
+
+---
+
+## 三、跨语言 AI Agent 生态覆盖
+
+| 资源 | Stars | 语言 | 覆盖内容 |
+|------|-------|------|---------|
+| awesome-rust | 58K⭐ | Rust | 1,060 项目全扫描 |
+| awesome-ai-agents | 28K⭐ | 多语言 | AI 自主 Agent 列表 |
+| awesome-agent-skills | 28K⭐ | 多语言 | 1,000+ Agent Skills |
+| awesome-agent-harness | 1.4K⭐ | 多语言 | 338 Harness 项目 |
+| awesome-agentic-patterns | 4.8K⭐ | 概念 | Agent 设计模式 |
+| awesome-claws | 478⭐ | Rust | Rust AI Agent 生态 |
+| awesome-mcp-servers | 90K⭐ | 多语言 | MCP 服务器大全 |
+
+---
+
+## 四、待继续工作
+
+### 4.1 需补充源码分析的 ★★/★★★ 报告（13 个）
+
+以下报告只有 README/元数据，缺少实际源码下载 + UA 分析：
+- nushell (★★★), gluesql (★★), oxideterm (★★), ds-free-api (★★), fabric (★★★), hiqlite (★★★), skills-rs, mcp-rust, operit-src, tabbyml (★★★)
+
+### 4.2 已发现但未深入分析的新项目
+
+| 项目 | Stars | 说明 |
+|------|-------|------|
+| codebase-memory-mcp | 32K⭐ | 代码记忆 MCP |
+| fastmcp | 26K⭐ | Python MCP 框架 |
+| activepieces | 23K⭐ | 400+ MCP 服务器 |
+| playwright-mcp | 35K⭐ | 浏览器 MCP |
+| god-github-mcp-server | 31K⭐ | GitHub MCP |
+| OpenFang | — | 137K LOC Agent OS |
+| Moltis | — | 个人 AI 网关 |
+| IronClaw | — | 隐私安全 Agent |
+
 ---
 
 ## 五、重要提示
 
-1. **UA Rust** 在 `D:\Hermes_Agent_Desktop\Hermes_Download\Understand_Anything_Rust\target\release\ua.exe`
-2. **hermes-agent-rs** 克隆在 `D:\Hermes_Agent_Desktop\Hermes_Download\hermes-agent-rs`
-3. **Operit_MCPS** 克隆在 `D:\Hermes_Agent_Desktop\Hermes_Download\Operit_MCPS`
-4. **HermesApp** Kotlin 源码在 `_analysis/hermesapp-src/`
-5. 用户 GitHub: `jinzechen`
-6. Git push 需 `GIT_CONFIG_PARAMETERS="'http.proxy='"` 绕过代理
-7. gh CLI 需 `NO_PROXY=* no_proxy=*` 前缀
-8. 用户偏好：中文输出、源码级深度、★★★★★优先
-9. **`Session_search`** 可查前序对话上下文
+1. **UA Rust**：`D:\Hermes_Agent_Desktop\Hermes_Download\Understand_Anything_Rust\target\release\ua.exe`
+2. **Git push** 需 `GIT_CONFIG_PARAMETERS="'http.proxy='"` 绕过代理
+3. **gh CLI** 需 `NO_PROXY=* no_proxy=*` 前缀
+4. **用户偏好**：中文输出、源码级深度、★★★★★优先
+5. **Hermes 配置**：使用自定义 provider（Xiaomi MiMo Singapore），不用标准 OpenAI/Anthropic
+6. **Windows 环境**：git-bash（MSYS），不是 PowerShell/cmd
+7. **用户 GitHub**：`jinzechen`
+8. **3 大核心项目优先级**：HermesApp-Rust 重构 > Operit > HermesApp
+
+---
+
+## 六、生成的全部文件索引
+
+### Learning/ 报告（D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\Learning\）
+
+```
+01-28: ★★★★★ 核心报告（hermes-agent-rs → MCP生态）
+29-50: ★★★★ 重要报告（HermesApp → clipboard-rs）
+51-63: ★★★/★★ 参考+了解
+```
+
+### UA Output（D:\Hermes_Agent_Desktop\Hermes_Download\Understand_Anything_Rust\Output\）
+
+```
+json/ — 74 个知识图谱（最大: Operit_MCPS 897KB, hermes-agent-rs 381KB）
+md/ — 74 个 Markdown 分析报告
+html/ — 23 个 D3.js 交互式仪表盘
+```
+
+### 会话日志
+
+本文件即为完整交接文档。
