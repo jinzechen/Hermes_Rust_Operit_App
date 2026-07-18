@@ -218,4 +218,21 @@ impl AgentManager {
         history.push(msg);
         Ok(())
     }
+
+    /// Return a reference to the current configuration.
+    pub fn config(&self) -> &AppConfig {
+        &self.config
+    }
+
+    /// Return the number of registered tools.
+    pub fn tool_count(&self) -> usize {
+        let registry = self.tool_registry.read();
+        registry.count()
+    }
+
+    /// Return the names of all registered tools.
+    pub fn list_tool_names(&self) -> Vec<String> {
+        let registry = self.tool_registry.read();
+        registry.list_all()
+    }
 }

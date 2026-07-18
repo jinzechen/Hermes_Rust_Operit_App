@@ -3,9 +3,9 @@
 //! Currently returns placeholder messages.  TODO: integrate
 //! agentic-vision for image analysis capabilities.
 
-use async_trait::async_trait;
+use anyhow::bail;
 
-use super::{ToolHandler, ToolInfo, ToolResult};
+use crate::core::tool_registry::{ToolHandler, ToolSchema};
 
 pub struct VisionTool;
 
@@ -21,14 +21,9 @@ impl Default for VisionTool {
     }
 }
 
-#[async_trait]
 impl ToolHandler for VisionTool {
-    fn name(&self) -> &str {
-        "vision"
-    }
-
-    fn info(&self) -> ToolInfo {
-        ToolInfo {
+    fn schema(&self) -> ToolSchema {
+        ToolSchema {
             name: "vision".into(),
             description: "Analyze images — describe scenes, extract text, identify objects".into(),
             parameters: serde_json::json!({
@@ -52,7 +47,7 @@ impl ToolHandler for VisionTool {
         }
     }
 
-    async fn execute(&self, arguments: serde_json::Value) -> ToolResult {
+    fn execute(&self, arguments: serde_json::Value) -> anyhow::Result<String> {
         let action = arguments
             .get("action")
             .and_then(|v| v.as_str())
@@ -71,27 +66,18 @@ impl ToolHandler for VisionTool {
                     msg.push_str(&format!("Prompt: {}\n", prompt));
                 }
                 msg.push_str("\n> TODO: Integrate agentic-vision for real image analysis.");
-                ToolResult {
-                    content: msg,
-                    is_error: false,
-                }
+                Ok(msg)
             }
             "describe_scene" => {
                 let path = arguments.get("path").and_then(|v| v.as_str()).unwrap_or("");
-                ToolResult {
-                    content: format!(
-                        "## Vision Describe (placeholder)\n\n\
-                         Image: {}\n\n\
-                         > TODO: Integrate agentic-vision for scene description.",
-                        path
-                    ),
-                    is_error: false,
-                }
+                Ok(format!(
+                    "## Vision Describe (placeholder)\n\n\
+                     Image: {}\n\n\
+                     > TODO: Integrate agentic-vision for scene description.",
+                    path
+                ))
             }
-            _ => ToolResult {
-                content: format!("**Error:** unknown vision action: '{}'", action),
-                is_error: true,
-            },
+            _ => bail!("unknown vision action: '{}'", action),
         }
     }
 }

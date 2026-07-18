@@ -3,9 +3,9 @@
 //! Currently returns placeholder messages.  TODO: integrate
 //! obscura's headless-browser capabilities.
 
-use async_trait::async_trait;
+use anyhow::bail;
 
-use super::{ToolHandler, ToolInfo, ToolResult};
+use crate::core::tool_registry::{ToolHandler, ToolSchema};
 
 pub struct BrowserTool;
 
@@ -21,14 +21,9 @@ impl Default for BrowserTool {
     }
 }
 
-#[async_trait]
 impl ToolHandler for BrowserTool {
-    fn name(&self) -> &str {
-        "browser"
-    }
-
-    fn info(&self) -> ToolInfo {
-        ToolInfo {
+    fn schema(&self) -> ToolSchema {
+        ToolSchema {
             name: "browser".into(),
             description: "Headless browser automation — navigate, click, type, screenshot".into(),
             parameters: serde_json::json!({
@@ -47,7 +42,7 @@ impl ToolHandler for BrowserTool {
         }
     }
 
-    async fn execute(&self, arguments: serde_json::Value) -> ToolResult {
+    fn execute(&self, arguments: serde_json::Value) -> anyhow::Result<String> {
         let action = arguments
             .get("action")
             .and_then(|v| v.as_str())
@@ -59,51 +54,41 @@ impl ToolHandler for BrowserTool {
                     .get("url")
                     .and_then(|v| v.as_str())
                     .unwrap_or("about:blank");
-                ToolResult {
-                    content: format!(
-                        "## Browser Navigate (placeholder)\n\n\
-                         URL: {}\n\n\
-                         > TODO: Integrate obscura for real browser navigation.",
-                        url
-                    ),
-                    is_error: false,
-                }
+                Ok(format!(
+                    "## Browser Navigate (placeholder)\n\n\
+                     URL: {}\n\n\
+                     > TODO: Integrate obscura for real browser navigation.",
+                    url
+                ))
             }
-            "screenshot" => ToolResult {
-                content: "## Browser Screenshot (placeholder)\n\n\
-                     > TODO: Integrate obscura to capture page screenshots."
+            "screenshot" => Ok(
+                "## Browser Screenshot (placeholder)\n\n\
+                 > TODO: Integrate obscura to capture page screenshots."
                     .into(),
-                is_error: false,
-            },
+            ),
             "get_html" => {
                 let selector = arguments
                     .get("selector")
                     .and_then(|v| v.as_str())
                     .unwrap_or("body");
-                ToolResult {
-                    content: format!(
-                        "## Browser Get HTML (placeholder)\n\n\
-                         Selector: {}\n\n\
-                         > TODO: Integrate obscura to extract page HTML.",
-                        selector
-                    ),
-                    is_error: false,
-                }
+                Ok(format!(
+                    "## Browser Get HTML (placeholder)\n\n\
+                     Selector: {}\n\n\
+                     > TODO: Integrate obscura to extract page HTML.",
+                    selector
+                ))
             }
             "click" => {
                 let selector = arguments
                     .get("selector")
                     .and_then(|v| v.as_str())
                     .unwrap_or("body");
-                ToolResult {
-                    content: format!(
-                        "## Browser Click (placeholder)\n\n\
-                         Selector: {}\n\n\
-                         > TODO: Integrate obscura for element interaction.",
-                        selector
-                    ),
-                    is_error: false,
-                }
+                Ok(format!(
+                    "## Browser Click (placeholder)\n\n\
+                     Selector: {}\n\n\
+                     > TODO: Integrate obscura for element interaction.",
+                    selector
+                ))
             }
             "type_text" => {
                 let selector = arguments
@@ -111,20 +96,14 @@ impl ToolHandler for BrowserTool {
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 let text = arguments.get("text").and_then(|v| v.as_str()).unwrap_or("");
-                ToolResult {
-                    content: format!(
-                        "## Browser Type (placeholder)\n\n\
-                         Selector: {}\nText: {}\n\n\
-                         > TODO: Integrate obscura for keyboard input.",
-                        selector, text
-                    ),
-                    is_error: false,
-                }
+                Ok(format!(
+                    "## Browser Type (placeholder)\n\n\
+                     Selector: {}\nText: {}\n\n\
+                     > TODO: Integrate obscura for keyboard input.",
+                    selector, text
+                ))
             }
-            _ => ToolResult {
-                content: format!("**Error:** unknown browser action: '{}'", action),
-                is_error: true,
-            },
+            _ => bail!("unknown browser action: '{}'", action),
         }
     }
 }

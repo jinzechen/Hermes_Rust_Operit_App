@@ -50,6 +50,11 @@ impl ToolRegistry {
         self.tools.keys().cloned().collect()
     }
 
+    /// Return the number of registered tools.
+    pub fn count(&self) -> usize {
+        self.tools.len()
+    }
+
     /// Return the schemas of all registered tools (for sending to the LLM).
     pub fn list_tool_schemas(&self) -> Vec<ToolSchema> {
         self.tools.values().map(|h| h.schema()).collect()

@@ -3,10 +3,10 @@
 //!
 //! Implements [`ToolHandler`].
 
-use async_trait::async_trait;
+use anyhow::bail;
 use regex::Regex;
 
-use super::{ToolHandler, ToolInfo, ToolResult};
+use crate::core::tool_registry::{ToolHandler, ToolSchema};
 
 pub struct MarkdownTool;
 
@@ -22,14 +22,9 @@ impl Default for MarkdownTool {
     }
 }
 
-#[async_trait]
 impl ToolHandler for MarkdownTool {
-    fn name(&self) -> &str {
-        "markdown"
-    }
-
-    fn info(&self) -> ToolInfo {
-        ToolInfo {
+    fn schema(&self) -> ToolSchema {
+        ToolSchema {
             name: "markdown".into(),
             description: "Render Markdown to terminal text, extract code blocks".into(),
             parameters: serde_json::json!({
@@ -50,7 +45,7 @@ impl ToolHandler for MarkdownTool {
         }
     }
 
-    async fn execute(&self, arguments: serde_json::Value) -> ToolResult {
+    fn execute(&self, arguments: serde_json::Value) -> anyhow::Result<String> {
         let action = arguments
             .get("action")
             .and_then(|v| v.as_str())
@@ -59,32 +54,14 @@ impl ToolHandler for MarkdownTool {
         let text = arguments.get("text").and_then(|v| v.as_str()).unwrap_or("");
 
         match action {
-            "render" => {
-                let rendered = render_markdown(text);
-                ToolResult {
-                    content: rendered,
-                    is_error: false,
-                }
-            }
+            "render" => Ok(render_markdown(text)),
             "extract_code" => {
                 let lang_filter = arguments.get("language").and_then(|v| v.as_str());
                 let blocks = extract_code_blocks(text, lang_filter);
-                ToolResult {
-                    content: blocks.join("\n\n---\n\n"),
-                    is_error: false,
-                }
+                Ok(blocks.join("\n\n---\n\n"))
             }
-            "strip_formatting" => {
-                let stripped = strip_markdown_formatting(text);
-                ToolResult {
-                    content: stripped,
-                    is_error: false,
-                }
-            }
-            _ => ToolResult {
-                content: format!("**Error:** unknown markdown action: '{}'", action),
-                is_error: true,
-            },
+            "strip_formatting" => Ok(strip_markdown_formatting(text)),
+            _ => bail!("unknown markdown action: '{}'", action),
         }
     }
 }

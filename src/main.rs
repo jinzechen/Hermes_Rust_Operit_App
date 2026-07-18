@@ -1,63 +1,23 @@
+use hermes_operit_core::core::agent::AgentManager;
 use hermes_operit_core::core::config::AppConfig;
-use hermes_operit_core::ui::settings::{AppSettings, SettingsManager};
-
-// ── Agent Manager (stub — wired up when agent module is complete) ───────────
-
-/// Manages AI agent instances and their lifecycle.
-struct AgentManager {
-    config: AppConfig,
-    settings: AppSettings,
-}
-
-impl AgentManager {
-    fn new(config: AppConfig, settings: AppSettings) -> Self {
-        Self { config, settings }
-    }
-
-    /// Register built-in tools (chat, store, settings, browser, filesystem, vision).
-    fn register_builtin_tools(&self) {
-        log::info!(
-            "Registered built-in tools: chat, store_browser, settings_manager, browser, filesystem, vision"
-        );
-    }
-
-    /// Print a summary of the current agent configuration.
-    fn print_status(&self) {
-        log::info!(
-            "AgentManager: model={}, endpoint={}, theme={}, lang={}",
-            self.config.model,
-            self.config.api_endpoint,
-            self.settings.theme,
-            self.settings.language,
-        );
-    }
-}
-
-// ── MCP Server Manager (stub) ───────────────────────────────────────────────
-
-struct McpServerManager;
-
-impl McpServerManager {
-    fn start() -> Self {
-        log::info!("MCP server manager started (stdio transport)");
-        Self
-    }
-}
+use hermes_operit_core::core::tool_registry::ToolHandler;
+use hermes_operit_core::tools::filesystem::FileSystemTool;
+use hermes_operit_core::tools::markdown::MarkdownTool;
+use hermes_operit_core::ui::settings::SettingsManager;
 
 // ── Banner ──────────────────────────────────────────────────────────────────
 
 const BANNER: &str = r#"
-╔══════════════════════════════════════════════════════╗
-║          Hermes Operit App v0.1.0                     ║
-║          Pure Rust AI Assistant Toolchain             ║
-║          (c) 2026 Operit / Nous Research              ║
-╚══════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════╗
+║         Hermes Operit App v0.1.0                  ║
+║         Pure Rust AI Assistant Toolchain          ║
+║         (c) 2026 Operit / Nous Research           ║
+╚══════════════════════════════════════════════════╝
 "#;
 
 // ── Entry Point ─────────────────────────────────────────────────────────────
 
-#[tokio::main]
-async fn main() {
+fn main() {
     // ── Initialize logging ──────────────────────────────────────────────
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
         .format_timestamp_millis()
@@ -65,39 +25,43 @@ async fn main() {
 
     println!("{}", BANNER);
 
-    // ── Load config from file or env ────────────────────────────────────
-    let core_config = AppConfig::default(); // TODO: load from file via AppConfig::load_from_file()
+    // ── Load config ─────────────────────────────────────────────────────
+    let core_config = AppConfig::default();
     let settings_mgr = SettingsManager::load();
-    let app_settings = settings_mgr.settings().clone();
 
     log::info!(
-        "Loaded config: model={}, endpoint={}, theme={}, lang={}",
+        "Loaded config: model={}, endpoint={}",
         core_config.model,
         core_config.api_endpoint,
-        app_settings.theme,
-        app_settings.language,
     );
 
     // ── Create AgentManager ─────────────────────────────────────────────
-    let agent = AgentManager::new(core_config, app_settings);
-    agent.register_builtin_tools();
-    agent.print_status();
+    let agent = match AgentManager::new(core_config) {
+        Ok(a) => a,
+        Err(e) => {
+            log::error!("Failed to create AgentManager: {}", e);
+            return;
+        }
+    };
 
-    // ── Start MCP server manager ────────────────────────────────────────
-    let _mcp = McpServerManager::start();
+    // ── Register built-in tools ─────────────────────────────────────────
+    let fs_tool = FileSystemTool::new();
+    agent.register_tool(Box::new(fs_tool));
 
-    // ── CLI mode: accept commands via stdin ─────────────────────────────
-    // ── (Dioxus app is commented out — Android-only) ────────────────────
-    // #[cfg(feature = "dioxus")]
-    // {
-    //     dioxus_mobile::launch(app);
-    //     return;
-    // }
+    let md_tool = MarkdownTool::new();
+    agent.register_tool(Box::new(md_tool));
 
+    log::info!(
+        "Registered {} tools",
+        agent.tool_count()
+    );
+
+    // ── CLI mode ────────────────────────────────────────────────────────
     log::info!("Entering CLI mode. Type 'help' for commands, 'quit' to exit.");
 
     let stdin = std::io::stdin();
     let mut buf = String::new();
+    let session_id = format!("cli-{}", std::process::id());
 
     loop {
         buf.clear();
@@ -107,13 +71,12 @@ async fn main() {
 
         match stdin.read_line(&mut buf) {
             Ok(0) => {
-                // EOF
                 log::info!("EOF received, shutting down.");
                 break;
             }
             Ok(_) => {
-                let cmd = buf.trim();
-                match cmd {
+                let input = buf.trim();
+                match input {
                     "quit" | "exit" => {
                         log::info!("Shutting down.");
                         break;
@@ -122,32 +85,82 @@ async fn main() {
                         println!("Available commands:");
                         println!("  help       Show this help");
                         println!("  status     Show agent status");
-                        println!("  chat       Enter chat mode (stub)");
-                        println!("  store      Browse plugin store (stub)");
+                        println!("  chat       Start chat session");
+                        println!("  chat <msg> Send a message to the agent");
+                        println!("  store      Browse plugin store (TODO)");
                         println!("  settings   Show current settings");
-                        println!("  login      GitHub OAuth login (stub)");
-                        println!("  quit/exit  Exit the application");
+                        println!("  login      GitHub OAuth login (TODO)");
+                        println!("  tools      List registered tools");
+                        println!("  quit/exit  Exit");
                     }
                     "status" => {
-                        agent.print_status();
+                        println!("Agent: model={}", agent.config().model);
+                        println!("Endpoint: {}", agent.config().api_endpoint);
+                        println!("Session: {}", session_id);
+                        println!("Tools registered: {}", agent.tool_count());
                     }
                     "settings" => {
                         println!("{}", settings_mgr.settings());
                     }
+                    "tools" => {
+                        println!("Registered tools:");
+                        for name in agent.list_tool_names() {
+                            println!("  - {}", name);
+                        }
+                    }
+                    cmd if cmd.starts_with("chat ") => {
+                        let msg = &cmd[5..];
+                        println!("Sending: {}", msg);
+                        match agent.send_message(&session_id, msg) {
+                            Ok(response) => {
+                                println!("\n{}", response.content);
+                                if !response.tool_calls.is_empty() {
+                                    println!("\n[{} tool call(s) made]", response.tool_calls.len());
+                                }
+                            }
+                            Err(e) => {
+                                println!("Error: {}", e);
+                            }
+                        }
+                    }
                     "chat" => {
-                        println!("Chat mode not yet implemented (stub).");
+                        println!("Entering chat mode. Type your message, or /quit to exit.");
+                        loop {
+                            buf.clear();
+                            print!("you> ");
+                            let _ = std::io::stdout().flush();
+                            match stdin.read_line(&mut buf) {
+                                Ok(0) | Err(_) => break,
+                                Ok(_) => {
+                                    let msg = buf.trim();
+                                    if msg == "/quit" || msg == "/exit" {
+                                        break;
+                                    }
+                                    if msg.is_empty() {
+                                        continue;
+                                    }
+                                    match agent.send_message(&session_id, msg) {
+                                        Ok(response) => {
+                                            println!("ai> {}", response.content);
+                                        }
+                                        Err(e) => {
+                                            println!("error> {}", e);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        println!("Exited chat mode.");
                     }
                     "store" => {
-                        println!("Store browser not yet implemented (stub).");
+                        println!("Store browser: not yet implemented.");
                     }
                     "login" => {
-                        println!("GitHub OAuth login not yet implemented (stub).");
+                        println!("GitHub OAuth: not yet implemented.");
                     }
-                    "" => {
-                        // Ignore empty lines.
-                    }
+                    "" => {}
                     other => {
-                        println!("Unknown command: '{}'. Type 'help' for available commands.", other);
+                        println!("Unknown: '{}'. Type 'help' for commands.", other);
                     }
                 }
             }

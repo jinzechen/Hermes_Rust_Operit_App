@@ -15,11 +15,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
-use async_trait::async_trait;
 use regex::Regex;
 use walkdir::WalkDir;
 
-use super::{ToolHandler, ToolInfo, ToolResult};
+use crate::core::tool_registry::{ToolHandler, ToolSchema};
 
 /// Allowed base directories.  Every path must resolve inside one of these.
 /// An empty set means **all paths are allowed** (use with caution).
@@ -246,14 +245,9 @@ impl FileSystemTool {
     }
 }
 
-#[async_trait]
 impl ToolHandler for FileSystemTool {
-    fn name(&self) -> &str {
-        "filesystem"
-    }
-
-    fn info(&self) -> ToolInfo {
-        ToolInfo {
+    fn schema(&self) -> ToolSchema {
+        ToolSchema {
             name: "filesystem".into(),
             description: "Read, write, list, search, and manage files within allowed directories"
                 .into(),
@@ -279,13 +273,13 @@ impl ToolHandler for FileSystemTool {
         }
     }
 
-    async fn execute(&self, arguments: serde_json::Value) -> ToolResult {
+    fn execute(&self, arguments: serde_json::Value) -> Result<String> {
         let op = arguments
             .get("operation")
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
-        let result: Result<String> = match op {
+        match op {
             "read_file" => self.op_read_file(&arguments),
             "write_file" => self.op_write_file(&arguments),
             "list_directory" => self.op_list_directory(&arguments),
@@ -295,17 +289,6 @@ impl ToolHandler for FileSystemTool {
             "delete_file" => self.op_delete_file(&arguments),
             "move_file" => self.op_move_file(&arguments),
             _ => bail!("unknown filesystem operation: '{}'", op),
-        };
-
-        match result {
-            Ok(content) => ToolResult {
-                content,
-                is_error: false,
-            },
-            Err(e) => ToolResult {
-                content: format!("**Error:** {}", e),
-                is_error: true,
-            },
         }
     }
 }
@@ -333,7 +316,6 @@ fn format_size(bytes: u64) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write as _;
 
     #[test]
     fn test_format_size() {
@@ -356,18 +338,19 @@ mod tests {
             "path": test_file.to_str().unwrap(),
             "content": "hello\nworld"
         });
-        let res = futures::executor::block_on(tool.execute(args));
-        assert!(!res.is_error);
+        let res = tool.execute(args);
+        assert!(res.is_ok());
 
         // read
         let args = serde_json::json!({
             "operation": "read_file",
             "path": test_file.to_str().unwrap(),
         });
-        let res = futures::executor::block_on(tool.execute(args));
-        assert!(!res.is_error);
-        assert!(res.content.contains("hello"));
-        assert!(res.content.contains("world"));
+        let res = tool.execute(args);
+        assert!(res.is_ok());
+        let content = res.unwrap();
+        assert!(content.contains("hello"));
+        assert!(content.contains("world"));
 
         // cleanup
         let _ = fs::remove_file(&test_file);
