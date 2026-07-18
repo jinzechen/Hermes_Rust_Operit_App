@@ -1,7 +1,4 @@
 //! GitHub OAuth 2.0 login flow using the `oauth2` crate with PKCE.
-//!
-//! Implements the authorization code grant with PKCE (Proof Key for Code Exchange)
-//! as recommended by GitHub for mobile / desktop apps.
 
 use oauth2::basic::BasicClient;
 use oauth2::{
@@ -36,11 +33,6 @@ pub struct GitHubUserInfo {
 
 impl GitHubOAuth {
     /// Create a new OAuth client with the given GitHub app credentials.
-    ///
-    /// # Arguments
-    /// * `client_id` — GitHub OAuth App client ID.
-    /// * `client_secret` — GitHub OAuth App client secret.
-    /// * `redirect_url` — Callback URL (e.g. `hermesapp://callback`).
     pub fn new(client_id: &str, client_secret: &str, redirect_url: &str) -> Self {
         let client_id = ClientId::new(client_id.into());
         let client_secret = ClientSecret::new(client_secret.into());
@@ -58,11 +50,6 @@ impl GitHubOAuth {
     }
 
     /// Generate the authorization URL that the user must visit in a browser.
-    ///
-    /// Returns:
-    /// - `auth_url` — the URL to open in a WebView/browser.
-    /// - `csrf_token` — OAuth state token (must be validated on callback).
-    /// - `pkce_verifier` — PKCE code verifier (must be stored for later exchange).
     pub fn generate_auth_url(&self) -> (String, CsrfToken, PkceCodeVerifier) {
         let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
@@ -77,24 +64,21 @@ impl GitHubOAuth {
         (auth_url.to_string(), csrf_token, pkce_verifier)
     }
 
-    /// Exchange an authorization code for an access token (synchronous, uses `reqwest::blocking`).
-    ///
-    /// After the user authorizes in the browser, GitHub redirects with `?code=...&state=...`.
-    /// Pass that code and the PKCE verifier from `generate_auth_url` to this method.
+    /// Exchange an authorization code for an access token using a reqwest HTTP client.
     pub fn exchange_code(
         &self,
         code: impl Into<String>,
         pkce_verifier: PkceCodeVerifier,
     ) -> Result<GitHubToken, anyhow::Error> {
         let code = AuthorizationCode::new(code.into());
-
         let http_client = reqwest::blocking::Client::new();
 
+        // Use oauth2's built-in reqwest integration (sync via closure)
         let token_result = self
             .client
             .exchange_code(code)
             .set_pkce_verifier(pkce_verifier)
-            .request(&http_client)?;
+            .request(oauth2::reqwest::http_client)?;
 
         let access_token = token_result.access_token().secret().clone();
         let token_type = match token_result.token_type() {
