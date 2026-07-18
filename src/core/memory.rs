@@ -95,14 +95,16 @@ impl MemoryStore {
             .begin_read()
             .context("Failed to begin read transaction")?;
 
-        let table = read_txn
-            .open_table(SESSIONS_TABLE)
-            .context("Failed to open sessions table")?;
+        let raw = {
+            let table = read_txn
+                .open_table(SESSIONS_TABLE)
+                .context("Failed to open sessions table")?;
 
-        let raw = match table.get(session_id) {
-            Ok(Some(data)) => data.value().to_vec(),
-            Ok(None) => return Ok(Vec::new()),
-            Err(e) => return Err(anyhow::anyhow!("Failed to read session: {}", e)),
+            match table.get(session_id) {
+                Ok(Some(data)) => data.value().to_vec(),
+                Ok(None) => return Ok(Vec::new()),
+                Err(e) => return Err(anyhow::anyhow!("Failed to read session: {}", e)),
+            }
         };
 
         let messages: Vec<Message> =
@@ -140,14 +142,18 @@ impl MemoryStore {
             .begin_read()
             .context("Failed to begin read transaction")?;
 
-        let table = read_txn
-            .open_table(PREFERENCES_TABLE)
-            .context("Failed to open preferences table")?;
+        let value = {
+            let table = read_txn
+                .open_table(PREFERENCES_TABLE)
+                .context("Failed to open preferences table")?;
 
-        match table.get(key) {
-            Ok(Some(v)) => Ok(Some(v.value().to_string())),
-            Ok(None) => Ok(None),
-            Err(e) => Err(anyhow::anyhow!("Failed to read preference: {}", e)),
-        }
+            match table.get(key) {
+                Ok(Some(v)) => Some(v.value().to_string()),
+                Ok(None) => None,
+                Err(e) => return Err(anyhow::anyhow!("Failed to read preference: {}", e)),
+            }
+        };
+
+        Ok(value)
     }
 }
