@@ -4,7 +4,14 @@
 //! commands inside it via `proot`.  On non-Linux platforms all
 //! operations return placeholder / error results.
 
+pub mod proot;
 pub mod sandbox;
+
+// Re-export sandbox types for ease of use.
+pub use sandbox::{Sandbox, SandboxBuilder, SandboxResult};
+
+// Re-export proot types for ease of use.
+pub use proot::{ProotConfig, ProotEnv};
 
 use std::fs;
 use std::path::{Path, PathBuf};
