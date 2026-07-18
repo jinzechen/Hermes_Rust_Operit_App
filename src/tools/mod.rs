@@ -9,6 +9,8 @@ pub mod codebase_analyzer;
 pub mod web;
 pub mod terminal;
 pub mod speech;
+pub mod process;
+pub mod cronjob;
 
 pub use filesystem::FileSystemTool;
 pub use browser::BrowserTool;
@@ -18,3 +20,5 @@ pub use codebase_analyzer::CodebaseAnalyzer;
 pub use web::WebTool;
 pub use terminal::TerminalTool;
 pub use speech::SpeechTool;
+pub use process::ProcessTool;
+pub use cronjob::CronJobTool;
