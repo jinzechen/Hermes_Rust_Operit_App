@@ -43,6 +43,14 @@ INPUT:
 | 255 个模板 | 高价值 pattern（summarize/review_code）可直接移植 | ★★★ |
 | 9 种策略 | CoT/AoT/ToT/Reflexion 可嵌入 Hermes 推理层 | ★★★ |
 
-### 评分：★★★
+### Rust 复刻总结
 
-Fabric 的 pattern 格式和 255 个模板是高质量资源，但 hermes-agent-rs 已有 skill 系统，pattern 可批量导入。
+将 Fabric 的 pattern 格式转换为她的 SKILL.md：
+
+```markdown
+# system.md → SKILL.md 的 instructions 字段
+# user.md → SKILL.md 的 input_template 字段
+```
+255 个 pattern 可批量导入。
+
+### 评分：★★★

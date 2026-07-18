@@ -65,3 +65,22 @@ android-bridge/
 ```
 
 每个桥接约 200-500 行 Rust 代码 + 对应的 Kotlin 胶水层。
+
+### Rust 复刻总结
+
+完整的 Android 桥接层目录结构：
+
+```
+android-bridge/
+├── Cargo.toml            ← jni = "0.21"
+├── src/
+│   ├── lib.rs            ← JNI 函数导出宏
+│   ├── accessibility.rs  ← 屏幕读取+点击
+│   ├── shizuku.rs        ← 系统权限
+│   ├── foreground.rs     ← 后台保活
+│   ├── notification.rs   ← 通知
+│   ├── termux.rs         ← Ubuntu 通道
+│   └── filesystem.rs     ← SAF 文件系统
+└── kotlin/
+    └── Bridge.kt         ← Kotlin 侧 JNI 声明
+```

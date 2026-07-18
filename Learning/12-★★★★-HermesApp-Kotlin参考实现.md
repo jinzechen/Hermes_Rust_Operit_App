@@ -56,7 +56,9 @@ class ConversationService {
 }
 ```
 
-**对应 Rust**：hermes-agent 的 `agent_loop.rs` (7,001行) 的 `run()` + `run_stream()`
+对应 Rust：hermes-agent 的 `agent_loop.rs` (7,001行) 的 `run()` + `run_stream()`
+
+**Rust 复刻**：`cargo add hermes-agent` → 直接使用 agent_loop.run()
 
 ### AIServiceFactory.kt（21KB）
 

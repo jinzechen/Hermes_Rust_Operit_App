@@ -18,4 +18,4 @@ ls | where name =~ "foo" | select name size
 
 ### 对 Hermes 的作用
 
-Agent 工具的输入输出可以借鉴 Nushell 的结构化数据理念：工具 A 的输出（结构化）→ 工具 B 的输入，而不是纯文本拼接。
+Agent 工具的输入输出可以借鉴 Nushell 的结构化数据理念。Hermes 的 tool_registry 已支持 JSON Schema 格式。

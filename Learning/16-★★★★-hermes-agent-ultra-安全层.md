@@ -67,6 +67,14 @@ static DENIED_PATTERNS: LazyLock<Vec<Regex>> = LazyLock::new(|| {
 | PII 脱敏 | ❌ | ✅ redact.rs | ★★★★ |
 | 工具策略预设 | ❌ | ✅ | ★★★ |
 
-### 评分：★★★★
+### Rust 复刻总结
 
-不直接引入 ultra（有功能重复），但其安全设计（guard/redact/approval）应借鉴到 Hermes_Rust_Operit_App 的 tool_registry 层。
+将 ultra 的 6 层安全设计分步集成到 Hermes_Rust_Operit_App：
+
+```rust
+// L1: Prompt injection 检测 → tools/guard.rs
+// L2: 工具策略预设 → tool_registry.rs 
+// L4: PII 脱敏 → core/redact.rs（30+ 密钥前缀检测）
+```
+
+### 评分：★★★★

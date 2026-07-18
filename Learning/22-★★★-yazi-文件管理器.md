@@ -16,6 +16,4 @@ yazi (Rust, 40K⭐)
 └── adapters/   → 预览器/打开器
 ```
 
-### 对 Hermes 的作用
-
-Hermes 已有 `filesystem.rs` (12.5KB)，yazi 的异步 I/O 设计可参考优化性能。
+Hermes 已有 `filesystem.rs` (12.5KB)。yazi 的异步 I/O 设计可参考但非必须。

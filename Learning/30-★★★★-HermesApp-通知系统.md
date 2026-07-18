@@ -52,6 +52,18 @@ SkillRecorderNotification
 | 通知创建 | `createChannel()` | 创建通知渠道 |
 | Agent 态通知 | `buildRecordingNotification()` | Agent 运行状态可见 |
 
-### 评分：★★★★
+### Rust 复刻总结
 
-通知系统是 Hermes_Rust_Operit_App 在 Android 上与用户交互的基本能力，包含通知读取（上下文感知）和通知显示（Agent 状态可见）。
+```rust
+// 通过 jni-rs 调用 Android NotificationManager
+fn send_notification(env: &mut JNIEnv, title: &str, text: &str) {
+    let manager = env.find_class("android/app/NotificationManager")?;
+    // NotificationCompat.Builder → build() → notify()
+}
+
+// 通知监听（读取其他 App 通知）
+// NotificationListenerService → onNotificationPosted()
+// → 获取通知文本 → 提供给 Agent 作上下文
+```
+
+### 评分：★★★★

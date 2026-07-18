@@ -51,6 +51,4 @@ let rows = glue.execute("SELECT id, name FROM Foo;")?;
 | 大小 | 50K 行 | 15K 行 |
 | 适用场景 | 需要 SQL 查询 | KV 存储 |
 
-### 评分：★★
-
-Hermes 已有 redb 做 KV 存储。gluesql 的 SQL 能力对 Agent 记忆系统不是必须的。如果需要 SQL，可用 tinycortex（SQLite 内置）。
+Hermes 已有 redb 做 KV 存储。如果需要 SQL 查询，tinycortex 已内置 SQLite。

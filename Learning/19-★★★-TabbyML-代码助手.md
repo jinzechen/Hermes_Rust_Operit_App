@@ -24,6 +24,13 @@ tabby (Rust, 33K⭐)
 | Candle 推理后端 | 与 EmbedAnything 同方案 |
 | 补全 API | 可为 Hermes 添加代码补全能力 |
 
-### 评分：★★★
+### Rust 复刻总结
 
-TabbyML 的核心价值（代码补全）与 Agent 应用场景有重叠但不是核心。其 candle 推理后端设计和 EmbedAnything 一致。
+TabbyML 的 candle 推理后端设计与 Hermes 已有的 EmbedAnything 一致：
+
+```rust
+// 复用 Hermes 已有的 candle 推理
+// TabbyML 的代码补全 API 可作为可选功能
+```
+
+### 评分：★★★

@@ -46,6 +46,23 @@ let results = client
 | 代码分析 | stdout | 可向量化检索知识图谱节点 |
 | RAG | 无 | 相关文档/代码语义检索 |
 
-### 评分：★★★★
+### Rust 复刻总结
 
-qdrant 为 Hermes 提供向量搜索能力，但需要结合嵌入模型（candle/EmbedAnything）生成向量。如果使用 tinycortex（内置混合检索），qdrant 可能不是必须。
+```toml
+[dependencies]
+qdrant-client = { version = "1.12", features = ["rustls"] }
+```
+
+```rust
+let client = Qdrant::new("http://localhost:6334")?;
+let results = client.search_points(&SearchPoints {
+    collection_name: "memory",
+    vector: embedding,  // 来自 candle/EmbedAnything
+    limit: 10,
+    ..Default::default()
+}).await?;
+```
+
+如果使用 tinycortex（内置混合检索），qdrant 可能不是必须。
+
+### 评分：★★★★

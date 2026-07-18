@@ -81,6 +81,18 @@ codex-sandboxing
 
 ---
 
-## 三、评分：★★★★
+### Rust 复刻总结
 
-openinterpreter 的 Rust 工作区（100+ crates）规模远超 Hermes（18 crates），但其 MCP 客户端（rmcp-client）和沙盒（sandboxing）实现值得 Hermes 参考。
+两个关键 crate 值得参考：
+
+```rust
+// 1. rmcp-client → 替换自建 MCP 客户端
+// OpenAI 的实现比 Hermes 自建 mcp/client.rs 更标准
+// 支持 stdio + SSE 双传输
+
+// 2. sandboxing → 安全代码执行
+// Linux 命名空间 + Docker + bwrap 三重沙盒
+// 对应 Hermes 的 code_execution.rs
+```
+
+### 评分：★★★★

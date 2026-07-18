@@ -22,6 +22,14 @@ cargo-ndk --platform 21 --target aarch64-linux-android build --release
 | **NDK r28c** | 已验证的 NDK 版本 |
 | **Flutter+Rust** | 如果未来需要 Flutter UI 的参考 |
 
-### 评分：★★★★
+### Rust 复刻总结
 
-rustdesk 的 Android 交叉编译流程是 Hermes 可以直接复制的。118K⭐ 的成功项目验证了 Rust→Android 的可行性。
+```bash
+# 编译命令（直接复刻 rustdesk）
+cargo ndk --platform 21 --target aarch64-linux-android build --release
+→ target/aarch64-linux-android/release/libhermes.so
+→ 放入 android/app/src/main/jniLibs/arm64-v8a/
+→ Gradle 打包 APK
+```
+
+### 评分：★★★★

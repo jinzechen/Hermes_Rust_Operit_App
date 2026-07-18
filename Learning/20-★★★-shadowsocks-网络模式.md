@@ -23,6 +23,8 @@
 | AEAD 加密 | 如果需要加密通信 |
 | SOCKS5 代理 | Android 网络代理 |
 
-### 评分：★★★
+### Rust 复刻总结
 
-shadowsocks-rust 的网络模式参考价值有限，因为 Hermes 的 Agent 通信主要通过 HTTP API 和 stdio MCP，不涉及代理/加密隧道。
+Hermes 的 Agent 通信主要通过 HTTP API 和 stdio MCP，不涉及代理/加密隧道。shadowsocks 的 tokio 异步模式已有参考。
+
+### 评分：★★★
