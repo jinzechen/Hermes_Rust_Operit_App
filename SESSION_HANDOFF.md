@@ -1,195 +1,197 @@
-# Hermes_Rust_Operit_App — 会话进度交接文档
+# SESSION_HANDOFF.md — 逐步骤执行清单
 
-> 生成时间：2026-07-18  
-> 当前模型：deepseek-v4-pro（已切换到 v4-flash 下次生效）  
-> 目标：让 deepseek-v4-flash 无缝接手继续执行  
-
----
-
-## 一、项目概述
-
-**目标**：纯 Rust 重构 Operit Android AI 助手应用，整合 hermes-agent-rs 内核 + Operit 外壳理念。
-
-**仓库**：https://github.com/jinzechen/Hermes_Rust_Operit_App  
-**本地路径**：`D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App`
+> 目标 AI：deepseek-v4-flash  
+> 规则：严格按编号顺序执行，完成一步再下一步。每步完成后 `git commit && git push`。
 
 ---
 
-## 二、当前进度
+## 第 0 步：了解项目
 
-### 2.1 已完成
+读这 3 个文件了解全局（不要读别的，浪费时间）：
+1. `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\README.md`
+2. `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\ARCHITECTURE.md`
+3. `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\Cargo.toml`
 
-| 阶段 | 内容 | 状态 |
-|------|------|------|
-| 项目骨架 | 23 个 Rust 文件，3661 行代码 | ✅ |
-| 核心模块 | AgentManager, ToolRegistry, MemoryStore, Config, 3 LLM Providers | ✅ |
-| 工具模块 | FileSystemTool(8 ops), MarkdownTool, BrowserTool(骨架), VisionTool(骨架) | ✅ |
-| MCP 模块 | McpClient (stdio JSON-RPC 2.0 完整实现) | ✅ |
-| 商店模块 | PluginStore (Skill/MCP 安装管理) | ✅ |
-| 环境模块 | Alpine Linux + Sandbox (骨架) | ✅ |
-| UI 数据层 | Chat, OAuth, Settings, StoreBrowser | ✅ |
-| CI | GitHub Actions (cargo check 仍在修编译错误) | ⚠️ |
-| 学习报告 | 17 份深度分析报告 | ✅ |
+---
 
-### 2.2 编译状态
-
-CI 当前失败，最后已知错误（待修复）：
-- CI 简化后只跑 `cargo check`，exit code 101
-- 已知修过的问题：redb 生命周期、oauth2 API、anyhow import、FileSystemTool::new 参数
-- 本地无法编译（Windows MSVC linker 被 MSYS link.exe 劫持）
-
-### 2.3 还有 7 个未完成模块待补充
+## 第 1 步：修复 CI
 
 ```
-需要新建的模块：
-  src/core/character.rs      ← 角色卡系统
-  src/core/local_model.rs    ← 本地模型管理
-  src/store/sources.rs       ← GitHub 源聚合
-  src/ui/voice.rs            ← 语音模块
-  src/core/sandbox.rs        ← 沙盒实现
+任务：让 GitHub Actions 的 cargo check 通过
+当前状态：CI 失败，exit code 101
+```
+
+**操作**：
+1. `git pull` 拉最新代码
+2. 打开 `D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\.github\workflows\build.yml`
+3. 确认内容只有 `cargo check` 和 `cargo test`
+4. 推送后跑 `gh workflow run build.yml --repo jinzechen/Hermes_Rust_Operit_App`
+5. 等 CI 结果：`gh run watch <run_id> --repo jinzechen/Hermes_Rust_Operit_App --exit-status`
+6. 如果失败，用 `gh run view <run_id> --log --job=<job_id>` 查看错误
+7. 修改对应源码文件，提交推送，重复直到 CI 绿色
+
+**已知可能错误**：
+- `src/core/memory.rs` — redb `ReadTransaction` 生命周期问题
+- `src/ui/login.rs` — oauth2 `request()` API 签名问题
+- 各种 `use anyhow::anyhow` 缺失
+
+**检查命令**（用于 CI 日志）：
+```
+gh run view <run_id> --repo jinzechen/Hermes_Rust_Operit_App --log 2>&1 | grep "error\[E" | head -10
 ```
 
 ---
 
-## 三、关键文件速查
-
-### 3.1 核心架构
+## 第 2 步：替换记忆系统
 
 ```
-src/lib.rs                    ← 模块导出 + re-export AgentManager/AppConfig
-src/main.rs                   ← CLI 入口 (help/status/chat/tools/store/login)
-src/core/mod.rs               ← 子模块声明
-src/core/agent.rs             ← AgentManager (唯一对外接口，AgentLoop 实现)
-src/core/tool_registry.rs     ← ToolHandler trait + ToolRegistry
-src/core/memory.rs            ← MemoryStore (redb)
-src/core/provider.rs          ← LlmProvider trait + Generic/Anthropic 实现
-src/core/config.rs            ← AppConfig
-src/tools/*.rs                ← 4 个工具（filesystem/markdown/browser/vision）
-src/mcp/client.rs             ← McpClient (stdio JSON-RPC)
-src/store/mod.rs              ← PluginStore
-src/environment/mod.rs        ← Alpine Linux 环境
-src/ui/*.rs                   ← Chat/OAuth/Settings/StoreBrowser 数据模型
+任务：用 tinycortex 替换当前的简陋 MemoryStore
+来源：Learning/02-OpenHuman-记忆系统.md
 ```
 
-### 3.2 依赖
+**操作**：
+1. 读 `Learning/02-OpenHuman-记忆系统.md` 了解 tinycortex API
+2. `cargo add tinycortex --features git-diff,persona`（在项目目录执行）
+3. 修改 `src/core/memory.rs`：
+   - 保留 `Message` 结构体
+   - 删除 `MemoryStore` 和它的 redb 实现
+   - 新建 `MemoryStore` 封装 tinycortex 的 API
+   - `save_session()` → tinycortex 的 memory store
+   - `load_session()` → tinycortex 的 recall
+4. 修改 `src/core/agent.rs` 中所有引用 `MemoryStore` 的地方适配新 API
+5. `git commit -m "Replace MemoryStore with tinycortex" && git push`
+6. 确认 CI 通过
 
-```toml
-tokio, serde, serde_json, serde_yaml
-reqwest (json + blocking + rustls-tls)
-oauth2 (reqwest feature)
-redb, log, env_logger, tracing
-anyhow, thiserror, async-trait
-uuid, chrono, parking_lot, once_cell, directories
-walkdir, flate2, regex
+---
+
+## 第 3 步：完善 Skill 系统
+
+```
+任务：实现完整的 Skill 生命周期
+来源：Learning/13-Operit-插件格式规范.md + Learning/14-Python-Hermes-原版Agent.md
+```
+
+**操作**：
+1. 读 `Learning/13-Operit-插件格式规范.md` 的 Skill 格式部分
+2. 读 `Learning/14-Python-Hermes-原版Agent.md` 的 Skills 系统部分
+3. 修改 `src/store/mod.rs`：
+   - `skill_view(name)` → 读取 SKILL.md 返回内容
+   - `skill_list()` → 扫描目录返回所有 skill 名称
+   - `skill_install(zip_path)` → 解压 ZIP 到 skills 目录
+4. 在 `src/core/agent.rs` 添加：
+   - AgentManager 新增方法：`invoke_skill(skill_name, user_text)`
+   - skill 调用时展开 SKILL.md 内容到 system prompt
+5. `git commit -m "Complete skill lifecycle" && git push`
+
+---
+
+## 第 4 步：Agent Loop 增强
+
+```
+任务：参考 Python Hermes 增强 AgentLoop
+来源：Learning/14-Python-Hermes-原版Agent.md
+```
+
+**操作**：
+1. 读 `Learning/14-Python-Hermes-原版Agent.md` 的 Agent Loop 部分
+2. 修改 `src/core/agent.rs` 的 `agent_loop()` 方法：
+   - 添加 `max_iterations` 限制（默认 20）
+   - 添加 context 压力检测（消息数 > 阈值时压缩）
+   - 添加 tool call 去重（同名同参数不重复执行）
+3. `git commit -m "Enhance AgentLoop: iteration limit, context pressure, tool dedup" && git push`
+
+---
+
+## 第 5 步：安全层
+
+```
+任务：添加基本的工具安全策略
+来源：Learning/03-Hermes-Agent-Ultra-安全策略.md
+```
+
+**操作**：
+1. 读 `Learning/03-Hermes-Agent-Ultra-安全策略.md` 的 guard.rs 部分
+2. 新建 `src/core/guard.rs`：
+   - 危险命令检测函数（rm -rf, sudo, chmod 777 等）
+   - prompt injection 检测函数
+3. 修改 `src/core/tool_registry.rs`：
+   - ToolRegistry::execute_tool() 前调用 guard 检查
+4. `git commit -m "Add basic tool security guard" && git push`
+
+---
+
+## 第 6 步：Token 优化
+
+```
+任务：添加工具输出过滤
+来源：Learning/07-rtk-cc-switch-优化与路由.md
+```
+
+**操作**：
+1. 新建 `src/core/optimizer.rs`
+2. 实现 3 个基础过滤策略：
+   - 去重：相同行只保留一条 + 计数
+   - 截断：输出超过 N 字符自动截断
+   - 空行压缩：连续空行 → 单个空行
+3. 修改 `src/core/agent.rs`：
+   - `execute_tool_call()` 后调用 optimizer.filter()
+4. `git commit -m "Add token optimizer with dedup/truncate/compact" && git push`
+
+---
+
+## 第 7 步：补充缺失模块
+
+```
+任务：创建之前计划但未实现的文件
+```
+
+**逐个创建以下文件**（不要批量，一个一个来）：
+
+### 7a: `src/core/character.rs`
+```rust
+// 角色卡系统，仿 Operit CharacterCard 结构
+// CharacterCard { id, name, description, persona_prompt, opening_statement, tags }
+// CharacterCardManager { load(), save(), list(), set_active() }
+```
+
+### 7b: `src/store/sources.rs`
+```rust
+// GitHub 源聚合
+// SourceConfig { name, url, category }
+// SourceManager { add_source(), list_sources(), fetch_index() }
+```
+
+### 7c: `src/core/local_model.rs`
+```rust
+// 本地模型管理（骨架）
+// LocalModelManager { list_models(), load_model() }
+```
+
+### 7d: 更新 `src/core/mod.rs` 添加新模块声明
+### 7e: 更新 `src/lib.rs` 添加新模块声明
+
+`git commit -m "Add character, sources, local_model modules" && git push`
+
+---
+
+## 第 8 步：确认全部通过
+
+```
+cargo check 通过
+cargo test 通过
+CI 绿色
 ```
 
 ---
 
-## 四、17 份学习报告索引
+## ⚠️ 重要规则
 
-`D:\Hermes_Agent_Desktop\Hermes_Download\Hermes_Rust_Operit_App\Learning\`
-
-| # | 文件 | 核心发现 | 整合优先级 |
-|---|------|----------|------------|
-| 01 | Understand-Anything | 知识图谱可视化 + 多语言解析器 | P3 |
-| 02 | OpenHuman | **tinycortex crate 可直接加依赖** | **P0** |
-| 03 | Hermes-Agent-Ultra | 6 层安全策略 + 确定性执行 | P1 |
-| 04 | TabbyML | Rich Segments 补全模型 | P2 |
-| 05 | Qdrant | Rust 原生向量搜索 | P2 |
-| 06 | Activepieces | ~400 MCP 数据源 | P2 |
-| 07 | rtk+cc-switch | Token 优化 + 供应商路由 | P1 |
-| 08 | oxideterm | AI + Terminal 融合 | P3 |
-| 09 | codex-mobile+iHermes | Android 移动端模式 | P3 |
-| 10 | yazi+servo | 异步 FS Engine + 浏览器引擎 | P2 |
-| 11 | openclaw | 60+ 供应商 Agent 架构 | P2 |
-| 12 | nushell | 结构化 Shell 管道模式 | P1 |
-| 13 | Operit-插件格式 | Skill/ToolPkg/MCP 规范 | P1 |
-| 14 | Python-Hermes | 原版 Agent Loop (~5680行) | P1 |
-| 15 | Fabric+AgentS+LLM | 255 patterns + 382 免费模型 | P2 |
-| 16 | Skills-MCP-生态 | 5400+ skills + 中文 MCP | P2 |
-| 17 | 深度代码库分析 | 完整类型系统 + 依赖图 + 整合路线图 | P0 |
+1. **每步完成后必须 git commit && git push**，不要攒着一起提交
+2. **不要从头学起**——17 份学习报告在 Learning/ 目录，直接读需要的
+3. **不要改已有模块的接口签名**——只做增量修改
+4. **cargo check 失败时优先修编译错误**，不要继续写新功能
+5. **回复用中文**，简洁直接，不要废话
 
 ---
 
-## 五、下一步行动（按优先级）
-
-### P0 — 立即执行
-
-1. **修复 CI 编译错误**
-   - 跑 `cargo check` 看最新错误
-   - 已知问题：redb 生命周期、oauth2 API 不匹配
-   - 目标：CI 绿色
-
-2. **添加 tinycortex 依赖**
-   - `cargo add tinycortex --features git-diff,persona`
-   - 替换当前简陋的 MemoryStore
-   - 实现 EmbeddingBackend/ChatProvider adapter
-
-### P1 — 核心增强
-
-3. **Agent Loop 增强**
-   - 参考 Python Hermes 的 context compression
-   - 添加 skill nudge 机制
-   - 添加 background review
-
-4. **安全层**
-   - 参考 hermes-agent-ultra 的 skill guard (19 危险模式)
-   - 添加 ToolHandler 中间件
-
-5. **TokenOptimizer**
-   - 参考 rtk 的 12 种过滤策略
-   - AgentLoop 内置过滤中间件
-
-6. **Skill 系统完善**
-   - 按 Operit 格式实现 skill_manage
-   - 实现 skill 扫描/加载/调用生命周期
-
-### P2 — 功能扩展
-
-7. **Qdrant 向量搜索集成**
-8. **ProviderRouter (priority + circuit breaker)**
-9. **Engine trait (yazi 可插拔 FS)**
-10. **Plugin Store 多源聚合**
-
-### P3 — 远期
-
-11. **CodebaseAnalyzer (Understand-Anything)**
-12. **Dioxus UI 层**
-13. **Android APK 构建**
-
----
-
-## 六、Understand-Anything 已安装状态
-
-```
-安装路径: D:\Hermes_Agent_Desktop\Hermes_Download\Understand-Anything\
-Dashboard: http://127.0.0.1:8765/ (Python HTTP，可能已停)
-知识图谱: 37 节点 / 46 边 (已生成)
-扫描命令: node understand-anything-plugin/skills/understand/scan-project.mjs <项目路径> <输出json>
-```
-
----
-
-## 七、当前模型配置
-
-```yaml
-# D:\Hermes_Agent_Desktop\config.yaml
-model: deepseek-v4-flash  # 已切换
-provider: custom
-```
-
----
-
-## 八、给接手 AI 的指令
-
-1. 阅读本文件了解全局
-2. 阅读 `Learning/17-深度代码库分析.md` 了解代码现状
-3. 阅读 `Learning/02-OpenHuman-记忆系统.md` 了解 tinycortex 整合方案
-4. 先修 CI，再按 P0→P1→P2→P3 顺序推进
-5. 不要重新学习已学过的项目，直接看 Learning/ 中的报告
-6. 每次提交前确认 `cargo check` 通过
-7. 用户偏好：中文回复、穷尽式分析、不弹确认窗
-
----
-
-*本文件由 deepseek-v4-pro 在会话结束时自动生成*
+*生成时间：2026-07-18 | 生成者：deepseek-v4-pro*
