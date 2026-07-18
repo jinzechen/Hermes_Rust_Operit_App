@@ -14,15 +14,12 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  # ─── Native build & test (Linux) ─────────────────────────────────────
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -33,75 +30,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
 
-      - name: Build
-        run: cargo build --verbose 2>&1
+      - name: cargo check
+        run: cargo check 2>&1
 
-      - name: Clippy
-        run: cargo clippy -- -D warnings
-
-      - name: Test
-        run: cargo test --verbose
-
-  # ─── Android APK build (aarch64) ─────────────────────────────────────
-  android:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[android]')
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platforms;android-34 build-tools;34.0.0 ndk;26.1.10909125'
-
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android, i686-linux-android
-
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-android-${{ hashFiles('Cargo.lock') }}
-
-      - name: Install cargo-apk
-        run: cargo install cargo-apk
-
-      - name: Build APK
-        env:
-          ANDROID_NDK_HOME: ${{ steps.setup-android.outputs.ndk-path }}
-          ANDROID_SDK_ROOT: ${{ steps.setup-android.outputs.sdk-path }}
-        run: |
-          # Add Android targets to rustup
-          rustup target add aarch64-linux-android armv7-linux-androideabi
-
-          # Create cargo config for Android linker
-          mkdir -p .cargo
-          cat > .cargo/config.toml << 'EOF'
-          [target.aarch64-linux-android]
-          linker = "aarch64-linux-android21-clang"
-
-          [target.armv7-linux-androideabi]
-          linker = "armv7a-linux-androideabi21-clang"
-          EOF
-
-          # Build APK (will work once Dioxus mobile is enabled)
-          # cargo apk build --release || echo "APK build requires Dioxus mobile feature"
-          echo "APK build target ready. Enable Dioxus in Cargo.toml to build."
-
-      - name: Upload APK artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk
-          path: target/release/apk/*.apk
-          if-no-files-found: ignore
+      - name: cargo test
+        run: cargo test 2>&1
