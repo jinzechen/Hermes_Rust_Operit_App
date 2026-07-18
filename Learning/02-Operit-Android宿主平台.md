@@ -1,143 +1,61 @@
-# 02 — Operit：Android MCP 宿主平台源码分析
+# 02 — Operit / HermesApp：Android Kotlin 壳源码级分析
 
-> **仓库**：https://github.com/AAswordman/Operit (5.8K⭐, Kotlin)  
-> **Hermes_Rust_Operit_App 评分**：★★★★★（Android 壳的目标平台）
-
----
-
-## 一、模块架构（从 settings.gradle.kts 提取）
-
-```
-Operit/
-├── :app/             → 主应用（UI + 工具 + 权限）
-├── :terminal/        → 终端模拟器
-├── :mnn/             → MNN 本地推理引擎
-├── :llama/           → llama.cpp 本地 GGUF 推理
-├── :showerclient/    → 投屏客户端
-├── :quickjs/         → JavaScript 引擎
-├── :dragonbones/     → 骨骼动画（角色 Avatar）
-├── :mmd/             → MMD 3D 模型
-└── :fbx/             → FBX 3D 模型
-```
+> **Operit**：https://github.com/AAswordman/Operit (5.8K⭐, Kotlin)  
+> **HermesApp**：https://github.com/SelectXn00b/HermesApp (194⭐, Kotlin)  
+> **HermesApp = "Hermes 内核(Kotlin) + Operit 壳(Android)"**
 
 ---
 
-## 二、核心功能模块源码级分析
-
-### 2.1 主应用模块（:app）
-
-通过 HermesApp 的 Kotlin 源码（200+ 文件）可以反推出 Operit 的架构：
+## 一、HermesApp 的 Android 依赖（从 build.gradle 提取）
 
 ```
-com.ai.assistance.operit/
-├── api/chat/
-│   ├── EnhancedAIService.kt      — 核心 AI 服务（Agent Loop）
-│   ├── ChatRuntimeHolder.kt      — 运行时持有者
-│   ├── AIForegroundService.kt    — 前台通知服务
-│   │
-│   ├── enhance/
-│   │   ├── ToolExecutionManager.kt  — ★工具执行引擎
-│   │   ├── ConversationService.kt   — 对话服务
-│   │   ├── FileBindingService.kt    — 文件绑定
-│   │   ├── MultiServiceManager.kt   — 多服务编排
-│   │   ├── InputProcessor.kt        — 输入处理
-│   │   └── ReferenceManager.kt      — 引用管理
-│   │
-│   ├── llmprovider/
-│   │   ├── AIServiceFactory.kt      — ★Provider 工厂
-│   │   ├── OpenAIProvider.kt        — OpenAI
-│   │   ├── ClaudeProvider.kt        — Claude
-│   │   ├── DeepseekProvider.kt      — DeepSeek
-│   │   ├── GeminiProvider.kt        — Gemini
-│   │   ├── OllamaProvider.kt        — Ollama 本地
-│   │   ├── KimiProvider.kt          — Kimi
-│   │   ├── DoubaoAIProvider.kt      — 豆包
-│   │   ├── MNNProvider.kt           — MNN 本地
-│   │   ├── LlamaProvider.kt         — llama.cpp 本地
-│   │   └── ... 共 13 个 Provider
-│   │
-│   └── library/
-│       └── MemoryLibrary.kt         — ★记忆库
-│
-├── core/
-│   ├── tools/
-│   │   └── defaultTool/standard/
-│   │       └── StandardBrowserSessionToolsBrowserSemantics.kt — 浏览器自动化
-│   └── workflow/
-│       └── WorkflowExecutor.kt      — ★工作流执行器
-│
-└── util/
-    ├── PathMapper.kt                — 路径映射
-    ├── CrashRecoveryState.kt        — 崩溃恢复
-    └── stream/                      — 流式处理
+HermesApp (Android App)
+├── Compose UI (Jetpack)
+├── Shizuku API → 系统级权限（ADB 级别）
+├── Xposed API → 框架钩子
+├── ObjectBox → 本地数据库
+├── Kotlin Serialization
+└── Aliyun Maven → 国内镜像
 ```
 
-### 2.2 EnhancedAIService.kt（核心 AI 服务）
+### Shizuku 的作用（关键）
 
-这是 Operit/HermesApp 的 `agent_loop.rs` 等效实现，用 Kotlin 实现了：
-
-```
-输入处理 → Provider 路由 → LLM 调用
-    → 工具执行 → 结果注入 → 下一轮
-    → 记忆存储 → 状态持久化
-```
-
-### 2.3 ToolExecutionManager.kt（工具执行引擎）
-
-对应 hermes-agent-rs 的 `ToolRegistry + dispatch.rs`，实现：
+HermesApp 使用 Shizuku 获取**系统级权限**（无需 root）：
 
 ```kotlin
-class ToolExecutionManager {
-    fun executeTool(name: String, args: JsonObject): JsonObject
-    fun listTools(): List<ToolSchema>
-    // 浏览器 / 文件 / 代码执行 / 搜索 ...
-}
+// 通过 Shizuku 执行系统命令
+Shizuku.newProcess(arrayOf("input", "tap", "500", "500"), null, null)
+// → 模拟屏幕点击（无障碍服务的高级替代）
 ```
 
-### 2.4 MemoryLibrary.kt（记忆库）
-
-对应 hermes-agent-rs 的 `memory_manager.rs`，但仅 1 种实现。
+这比无障碍服务更强大——可以执行 ADB 级别的操作。
 
 ---
 
-## 三、Operit 特色功能（HermesApp 中没有的）
+## 二、Android 特定功能分析
 
-| 功能 | 模块 | Rust 复刻方案 |
-|------|------|--------------|
-| **Ubuntu 24 环境** | Termux | Termux JNI 通道 |
-| **本地 MNN 推理** | `:mnn` | candle (Rust) |
-| **本地 llama.cpp** | `:llama` | llama-cpp-rs |
-| **JS 引擎** | `:quickjs` | boa_engine (Rust) |
-| **投屏** | `:showerclient` | 预留 |
-| **角色 Avatar** | `:dragonbones` | Dioxus 动画替代 |
-| **角色卡** | app 内 | Dioxus UI + redb |
+| 功能 | 在 HermesApp 中的实现 | Rust 替代方案 |
+|------|---------------------|--------------|
+| **无障碍服务** | Android AccessibilityService | JNI 桥接 |
+| **Shizuku 系统权限** | Shizuku API | JNI + Shizuku |
+| **屏幕点击** | `input tap x y` via Shizuku | JNI 桥接 |
+| **前台服务** | AIForegroundService | JNI 桥接 |
+| **通知** | Android Notification | JNI 桥接 |
+| **文件绑定** | FileBindingService | hermes-tools file.rs |
+| **本地数据库** | ObjectBox | redb |
 
 ---
 
-## 四、对 Hermes_Rust_Operit_App 的整合
+## 三、对 Hermes_Rust_Operit_App 的作用
 
-### 直接可用的能力
-
-| Operit 功能 | Rust 替代 | 工作量 |
-|------------|----------|--------|
-| 13 个 LLM Provider | hermes-agent-rs provider.rs | 零 |
-| 40+ 内置工具 | hermes-tools 35 个 | 零 |
-| 记忆系统 | hermes-agent memory_manager | 零 |
-| 浏览器 | hermes-tools browser.rs + obscura | 零 |
-| 文件系统 | hermes-tools file.rs | 零 |
-| 终端 | hermes-tools terminal.rs | 零 |
-| 语音 TTS | hermes-tools tts.rs | 零 |
-| 定时任务 | hermes-cron | 零 |
-
-### 需要 Android 特定桥接的
-
-| Operit 功能 | 方案 | 工作量 |
-|------------|------|--------|
-| Ubuntu 24 环境 | Termux JNI | ~500 行 |
-| 无障碍服务 | Android JNI | ~300 行 |
-| 前台通知 | Android JNI | ~200 行 |
-| 本地模型 | candle (纯 Rust) | 零（但需下载模型） |
+| 能力 | 当前 Hermes_Rust | HermesApp 的参考 | 优先级 |
+|------|-----------------|-----------------|--------|
+| Shizuku 权限 | ❌ 无 | 系统级操作 | ★★★★★ |
+| 无障碍 | ❌ 无 | 屏幕读取+点击 | ★★★★★ |
+| 前台服务 | ❌ 无 | 后台运行 | ★★★★ |
+| 通知 | ❌ 无 | 用户交互 | ★★★★ |
+| 文件绑定 | ✅ filesystem.rs | 参考设计 | ★★★ |
 
 ### 评分：★★★★★
 
-Operit 是目标 Android 平台。Hermes_Rust_Operit_App 不需要重新实现 Operit 的功能，而是用 Rust 工具链替换其 Kotlin 实现。核心工作：将 hermes-agent-rs 的 Rust 能力通过 JNI 暴露给 Android。
+Operit/HermesApp 提供的 Android 特定功能（Shizuku、无障碍、前台服务）是 Hermes_Rust_Operit_App 需要实现的 Android 桥接层的完整功能清单。
