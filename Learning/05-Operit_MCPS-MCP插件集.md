@@ -1,93 +1,75 @@
-# 05 — Operit_MCPS：9 个 MCP 插件源码分析
+# 05 — Operit_MCPS：9 个 MCP 插件源码级分析
 
 > **仓库**：https://github.com/jinzechen/Operit_MCPS (用户自建, Rust)  
-> **UA Rust 分析数据**：1,505 nodes / 1,556 edges / 5 layers / 659 Rust 文件  
-> **Hermes_Rust_Operit_App 评分**：★★★★★（直接使用，按需决定内置/MCP）
+> **UA Rust 分析**：1229 文件 / 659 Rust 文件 / **1505 节点** / **1556 边** / 5 层架构  
+> **Hermes_Rust_Operit_App 评分**：★★★★★
 
 ---
 
-## 一、9 个插件详解
+## 一、UA Rust 分析发现
 
-| # | 插件 | Rust 重写 | 功能 | Hermes 对应 | 决策 |
-|---|------|----------|------|-----------|------|
-| 1 | **obscura** | ❌ 预编译 binary | 无头浏览器 | `browser.rs` | ✅ 内置 |
-| 2 | **agentic_vision** | ✅ 自写 | 视觉分析/OCR | `vision.rs` | ✅ 内置 |
-| 3 | **rust_mcp_filesystem** | ✅ 自写 | 25+ 文件操作 | `filesystem.rs` | ✅ 内置 |
-| 4 | **typemill** | ✅ 自写 | Markdown 处理 | `markdown.rs` | ✅ 内置 |
-| 5 | **sherpa** | ✅ 自写 | 语音 ASR+TTS | 新功能 | ✅ 内置 |
-| 6 | **m3ux** | ✅ 自写 | 音频处理 | 新功能 | ⚠️ 保留 MCP |
-| 7 | **rust_mcp_server** | ✅ 自写 | Rust 开发工具 | 新功能 | ⚠️ 保留 MCP |
-| 8 | **mcp_proxy** | ✅ 自写 | MCP 代理 | 新功能 | ⚠️ 保留 MCP |
-| 9 | **rust_docs_mcp** | ✅ 自写 | Rust 文档查询 | 新功能 | ⚠️ 保留 MCP |
+| 指标 | 值 |
+|------|----|
+| 总文件数 | 1,229（14 种语言） |
+| Rust 源文件 | **659**（最大代码库） |
+| 解析的文件 | **624** |
+| 知识图谱节点 | **1,505** |
+| 关系连线 | **1,556** |
+| 架构层数 | **5** |
+| 引导步数 | **8** |
+| 复杂度 | Complex |
 
-### 内置化原则（来自 hermes-agent-rs 的集成铁律）
-
-```
-ToolHandler (0 开销) > MCP Client (15ms) > Skills (50ms)
-```
-
-高频 + 低延迟 → 内置 ToolHandler（browser/vision/filesystem/markdown/voice）
-低频 + 重量 → 保留 MCP（rust tools/docs/audio/proxy）
+这是 Hermes_Rust_Operit_App 生态中**规模最大的代码库**，甚至超过 hermes-agent-rs（352 Rust 文件）。
 
 ---
 
-## 二、ZIP 打包规范（build 目录分析）
-
-每个插件的发布产物：
+## 二、9 个插件 + 构建系统
 
 ```
-plugin-v1.0.0.zip
-├── binary                → aarch64-linux-musl 静态链接
-├── index.js              → auto-chmod 755 + spawn(bin, args)
-└── package.json          → name / version / description / tools
+Operit_MCPS/
+├── build.sh             → 构建脚本（cross + Docker）
+├── build/
+│   ├── src-obscura/        → 无头浏览器 ★
+│   ├── src-agentic_vision/ → 视觉分析 ★
+│   └── src-rust-mcp-*/     → Rust MCP 工具
+├── .github/workflows/
+│   └── build-mcp-plugins.yml → CI 自动构建
+└── 发布 ZIP 包
+    ├── binary            → aarch64-linux-musl 静态链接
+    ├── index.js          → auto-chmod + spawn
+    └── package.json      → 元数据
 ```
 
-### index.js 模板
+### 构建流程
 
-```javascript
-#!/usr/bin/env node
-const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-
-const bin = path.join(__dirname, 'binary');
-// Android 上 chmod 755
-try { fs.chmodSync(bin, 0o755); } catch(e) {}
-
-const proc = spawn(bin, process.argv.slice(2), {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env }
-});
-
-process.stdin.pipe(proc.stdin);
-proc.stdout.pipe(process.stdout);
-proc.stderr.pipe(process.stderr);
-proc.on('exit', (code) => process.exit(code));
+```bash
+# build.sh
+for plugin in obscura agentic_vision rust_mcp_server mcp_proxy \
+              rust_mcp_filesystem rust_docs_mcp typemill; do
+    cross build --target aarch64-unknown-linux-musl --release
+    # → 产物: target/aarch64-linux-musl/release/<binary>
+    # → 打包: binary + index.js + package.json → ZIP
+done
 ```
 
 ---
 
-## 三、对 Hermes_Rust_Operit_App 的作用
+## 三、插件内置化评估
 
-### 直接可用的 MCP 插件（保留）
+| 插件 | Rust 文件数 | 功能 | 决策 | 理由 |
+|------|-----------|------|------|------|
+| obscura | 预编译 | 无头浏览器 | ✅ 内置 | hermes-tools browser.rs |
+| agentic_vision | 大量 | 视觉/OCR | ✅ 内置 | hermes-tools vision.rs |
+| rust_mcp_filesystem | 大量 | 25+ 文件操作 | ✅ 内置 | hermes-tools file.rs |
+| typemill | Rust 自写 | Markdown | ✅ 内置 | hermes-tools markdown |
+| sherpa | Rust 自写 | 语音 | ✅ 内置 | sherpa-onnx 直接调用 |
+| rust_mcp_server | 大量 | Rust 工具链 | ⚠️ MCP | 太重，按需 |
+| mcp_proxy | 少量 | MCP 代理 | ⚠️ MCP | 外部连接 |
+| m3ux | 少量 | 音频 | ⚠️ MCP | 低频 |
+| rust_docs_mcp | 少量 | 文档查询 | ⚠️ MCP | 按需 |
 
-通过 `mcp/client.rs` 直接连接：
+---
 
-```rust
-// 使用 MCP 模式调用 obscura
-let client = McpClient::connect_stdio("obscura", &["mcp"])
-let tools = client.list_tools().await?;
-let result = client.call_tool("browser_navigate", json!({"url": "..."})).await?;
-```
+## 四、评分：★★★★★
 
-### 可内置的 ToolHandler（性能更优）
-
-```rust
-// 使用 ToolHandler 模式（0 开销）
-let handler = BrowserNavigateHandler::new(backend);
-let result = handler.handle(tool_call).await?;
-```
-
-### 评分：★★★★★
-
-Operit_MCPS 是连接 Hermes_Rust_Operit_App 和 Operit Android 壳的桥梁。5 个插件可内置化提升性能，4 个保留 MCP 提供扩展性。
+Operit_MCPS 是 Hermes_Rust_Operit_App 和 Operit Android 壳之间的桥梁。9 个插件中 5 个可内置化提升性能，4 个保留 MCP 提供扩展性。
