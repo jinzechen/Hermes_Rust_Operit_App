@@ -5,6 +5,9 @@ pub mod store;
 pub mod tools;
 pub mod ui;
 
+#[cfg(target_os = "android")]
+pub mod android;
+
 // Re-exports
 pub use core::config::AppConfig;
 pub use core::agent::AgentManager;

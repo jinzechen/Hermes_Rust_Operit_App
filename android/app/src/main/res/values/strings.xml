@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Hermes Operit</string>
+    <string name="accessibility_service_description">Hermes Operit accessibility service for UI automation and screen reading.</string>
+    <string name="notification_service_description">Hermes Operit notification listener for event monitoring.</string>
+    <string name="foreground_service_channel">Hermes Service</string>
+    <string name="foreground_service_label">Hermes Operit is running</string>
+</resources>

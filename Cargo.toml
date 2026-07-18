@@ -81,6 +81,10 @@ oauth2 = { version = "4.4", default-features = false, features = ["reqwest"] }
 # landlock = "0.3"
 # NOTE: Android seccomp requires bionic libc bindings. Platform-gated.
 
+# === Android JNI bridge ===
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.21", features = ["invocation"] }
+
 [profile.release]
 lto = true
 opt-level = "s"

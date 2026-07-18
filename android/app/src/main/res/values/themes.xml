@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.HermesOperit" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">#1E1E2E</item>
+        <item name="colorPrimaryDark">#181825</item>
+        <item name="colorAccent">#89B4FA</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+    </style>
+</resources>
