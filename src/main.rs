@@ -1,6 +1,5 @@
 use hermes_operit_core::core::agent::AgentManager;
 use hermes_operit_core::core::config::AppConfig;
-use hermes_operit_core::core::tool_registry::ToolHandler;
 use hermes_operit_core::tools::filesystem::FileSystemTool;
 use hermes_operit_core::tools::markdown::MarkdownTool;
 use hermes_operit_core::ui::settings::SettingsManager;
@@ -45,7 +44,7 @@ fn main() {
     };
 
     // ── Register built-in tools ─────────────────────────────────────────
-    let fs_tool = FileSystemTool::new();
+    let fs_tool = FileSystemTool::new(vec![]);
     agent.register_tool(Box::new(fs_tool));
 
     let md_tool = MarkdownTool::new();
