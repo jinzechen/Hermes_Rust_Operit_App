@@ -60,6 +60,7 @@ directories = "5"
 # === Filesystem tools ===
 walkdir = "2"
 flate2 = "1"
+zip = { version = "0.6", default-features = false, features = ["deflate", "time"] }
 regex = "1"
 moka = { version = "0.12.15", features = ["future", "sync"] }
 scraper = "0.27.0"

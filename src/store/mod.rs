@@ -1,7 +1,13 @@
-//! PluginStore — manages Skills and MCP server plugins on disk.
+//! PluginStore — manages Skills, MCP server plugins, and external plugin packages.
 //!
 //! Skills are directories containing a `SKILL.md` manifest.
 //! MCP servers are described by JSON config files.
+//! External plugins are downloaded from the store (GitHub Releases), installed
+//! into `~/.hermes/plugins/`, and managed via the plugin manager.
+
+pub mod index;
+pub mod installer;
+pub mod manager;
 
 use std::collections::HashMap;
 use std::fs;
@@ -10,6 +16,11 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
+
+// Re-export the store module types for convenient access.
+pub use index::{builtin_index, fetch_index, find_plugin, load_cache, load_cached_or_builtin, save_cache, PluginIndex, StoreIndex};
+pub use installer::{download_plugin, extract_zip, install_plugin, verify_checksum};
+pub use manager::{check_update, disable_plugin, enable_plugin, install, list_installed, uninstall_plugin, upgrade_plugin, PluginState};
 
 // ── domain types ───────────────────────────────────────────────────
 

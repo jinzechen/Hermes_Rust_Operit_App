@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{anyhow, Context, Result};
 use parking_lot::RwLock;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tokio::runtime::Runtime;
 
@@ -25,6 +26,25 @@ pub struct AgentResponse {
     pub session_id: String,
     /// Aggregated token usage across all LLM calls in this agent loop.
     pub token_usage: Option<TokenUsage>,
+}
+
+// ── AgentStatus ─────────────────────────────────────────────────────────────
+
+/// Snapshot of the agent's current state, intended for UI health dashboards.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentStatus {
+    /// The LLM model identifier (e.g. "gpt-4o").
+    pub model: String,
+    /// The API endpoint URL being used.
+    pub endpoint: String,
+    /// Number of registered tools.
+    pub tool_count: usize,
+    /// Number of active sessions.
+    pub session_count: usize,
+    /// Seconds since the AgentManager was created.
+    pub uptime_secs: f64,
+    /// Whether the provider endpoint appears reachable.
+    pub provider_ok: bool,
 }
 
 // ── Session metadata ────────────────────────────────────────────────────────
@@ -51,6 +71,8 @@ pub struct AgentManager {
     max_iterations: usize,
     /// Sessions idle longer than this are candidates for cleanup.
     session_timeout: Duration,
+    /// Timestamp when this AgentManager was created (for uptime calculation).
+    created_at: Instant,
 }
 
 impl AgentManager {
@@ -67,7 +89,31 @@ impl AgentManager {
             runtime,
             max_iterations: 20,
             session_timeout: Duration::from_secs(3600), // 1 hour default
+            created_at: Instant::now(),
         })
+    }
+
+    /// Create a new AgentManager and automatically register the standard
+    /// built-in tools: filesystem, markdown, web, terminal, browser, vision.
+    pub fn with_default_tools(config: AppConfig) -> Result<Self> {
+        let agent = Self::new(config)?;
+
+        // Register all default tools.  WebTool::new() can fail, so we handle
+        // that gracefully — if one tool fails we still register the others.
+        agent.register_tool(Box::new(
+            crate::tools::FileSystemTool::new(vec![std::env::current_dir()
+                .unwrap_or_else(|_| std::path::PathBuf::from("."))]),
+        ));
+        agent.register_tool(Box::new(crate::tools::MarkdownTool::new()));
+        match crate::tools::WebTool::new() {
+            Ok(wt) => agent.register_tool(Box::new(wt)),
+            Err(e) => log::warn!("Failed to register WebTool: {}", e),
+        }
+        agent.register_tool(Box::new(crate::tools::TerminalTool::new()));
+        agent.register_tool(Box::new(crate::tools::BrowserTool::new()));
+        agent.register_tool(Box::new(crate::tools::VisionTool::new()));
+
+        Ok(agent)
     }
 
     /// Set the maximum number of agent-loop iterations before forced exit.
@@ -353,5 +399,339 @@ impl AgentManager {
     pub fn has_session(&self, session_id: &str) -> bool {
         let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         sessions.contains_key(session_id)
+    }
+
+    // ── UI-friendly API ──────────────────────────────────────────────────
+
+    /// List the IDs of all currently active sessions.
+    pub fn list_sessions(&self) -> Vec<String> {
+        let sessions = self
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        sessions.keys().cloned().collect()
+    }
+
+    /// Return a clone of the full message history for a session.
+    /// Returns an empty Vec if the session does not exist.
+    pub fn get_session_history(&self, session_id: &str) -> Vec<Message> {
+        let sessions = self
+            .sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        sessions.get(session_id).cloned().unwrap_or_default()
+    }
+
+    /// Remove a session and its metadata entirely.  Does nothing if the
+    /// session doesn't exist.
+    pub fn clear_session(&self, session_id: &str) {
+        {
+            let mut sessions = self
+                .sessions
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            sessions.remove(session_id);
+        }
+        {
+            let mut meta = self
+                .session_meta
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            meta.remove(session_id);
+        }
+    }
+
+    /// Return `(name, description)` tuples for every registered tool.
+    pub fn get_tool_descriptions(&self) -> Vec<(String, String)> {
+        let registry = self.tool_registry.read();
+        registry
+            .list_tool_schemas()
+            .into_iter()
+            .map(|ts| (ts.name, ts.description))
+            .collect()
+    }
+
+    /// Build a human-readable summary of the agent's memory / state.
+    /// Includes session count, tool count, uptime, and active session IDs.
+    pub fn get_memory_summary(&self) -> String {
+        let session_count = self.session_count();
+        let tool_count = self.tool_count();
+        let uptime = self.created_at.elapsed();
+        let sessions = self.list_sessions();
+
+        let mut summary = format!(
+            "Agent Memory Summary\n\
+             ────────────────────\n\
+             Active sessions:   {}\n\
+             Registered tools:  {}\n\
+             Uptime:            {}s\n",
+            session_count,
+            tool_count,
+            uptime.as_secs()
+        );
+
+        if session_count > 0 {
+            summary.push_str(&format!(
+                "Session IDs:        {}\n",
+                sessions.join(", ")
+            ));
+        }
+
+        summary.push_str(&format!(
+            "Model:              {}\n\
+             Endpoint:           {}",
+            self.config.model, self.config.api_endpoint
+        ));
+
+        summary
+    }
+
+    /// Change a configuration value at runtime.
+    ///
+    /// Supported keys: `model`, `api_endpoint`, `temperature`, `max_tokens`,
+    /// `api_key`.
+    pub fn set_config(&mut self, key: &str, value: &str) -> Result<()> {
+        match key {
+            "model" => {
+                self.config.model = value.to_string();
+            }
+            "api_endpoint" | "endpoint" => {
+                self.config.api_endpoint = value.to_string();
+            }
+            "temperature" => {
+                self.config.temperature = value
+                    .parse::<f32>()
+                    .map_err(|_| anyhow!("temperature must be a float, got: {}", value))?;
+            }
+            "max_tokens" => {
+                self.config.max_tokens = value
+                    .parse::<u32>()
+                    .map_err(|_| anyhow!("max_tokens must be a u32, got: {}", value))?;
+            }
+            "api_key" => {
+                self.config.api_key = value.to_string();
+            }
+            other => {
+                return Err(anyhow!(
+                    "Unknown config key '{}'. Supported: model, api_endpoint, \
+                     temperature, max_tokens, api_key",
+                    other
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    /// Return a snapshot of the agent's health and status.
+    pub fn health_check(&self) -> AgentStatus {
+        // Best-effort connectivity check to the provider endpoint.
+        let provider_ok = self.runtime.block_on(async {
+            let base_url =
+                if let Some(pos) = self.config.api_endpoint.rfind("/v") {
+                    &self.config.api_endpoint[..pos]
+                } else {
+                    &self.config.api_endpoint
+                };
+            match reqwest::Client::builder()
+                .timeout(Duration::from_secs(5))
+                .build()
+            {
+                Ok(client) => match client.head(base_url).send().await {
+                    Ok(resp) => {
+                        let status = resp.status().as_u16();
+                        status < 500 // any non-5xx means reachable
+                    }
+                    Err(_) => false,
+                },
+                Err(_) => false,
+            }
+        });
+
+        AgentStatus {
+            model: self.config.model.clone(),
+            endpoint: self.config.api_endpoint.clone(),
+            tool_count: self.tool_count(),
+            session_count: self.session_count(),
+            uptime_secs: self.created_at.elapsed().as_secs_f64(),
+            provider_ok,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_config() -> AppConfig {
+        AppConfig {
+            model: "test-model".into(),
+            api_key: "sk-test".into(),
+            api_endpoint: "https://api.example.com/v1/chat/completions".into(),
+            temperature: 0.5,
+            max_tokens: 1024,
+        }
+    }
+
+    #[test]
+    fn test_new_agent_manager() {
+        let agent = AgentManager::new(test_config()).unwrap();
+        assert_eq!(agent.tool_count(), 0);
+        assert_eq!(agent.session_count(), 0);
+        assert_eq!(agent.list_tool_names().len(), 0);
+        assert_eq!(agent.list_sessions().len(), 0);
+    }
+
+    #[test]
+    fn test_with_default_tools() {
+        let agent = AgentManager::with_default_tools(test_config()).unwrap();
+        // At least 5 of the 6 tools should be registered (WebTool might fail
+        // in offline environments but the other five are infallible).
+        let count = agent.tool_count();
+        assert!(
+            count >= 5,
+            "Expected at least 5 default tools, got {}",
+            count
+        );
+        let names = agent.list_tool_names();
+        assert!(names.contains(&"filesystem".to_string()));
+        assert!(names.contains(&"markdown".to_string()));
+        assert!(names.contains(&"terminal".to_string()));
+        assert!(names.contains(&"browser".to_string()));
+        assert!(names.contains(&"vision".to_string()));
+    }
+
+    #[test]
+    fn test_list_and_clear_sessions() {
+        let agent = AgentManager::new(test_config()).unwrap();
+
+        // Initially no sessions.
+        assert!(agent.list_sessions().is_empty());
+        assert_eq!(agent.session_count(), 0);
+
+        // Trigger session creation by sending a message (will fail because no
+        // real LLM, but the session is created before the LLM call).
+        let _ = agent.send_message("sess-1", "hello");
+
+        // Session should now exist (even though the LLM call will fail).
+        let sessions = agent.list_sessions();
+        assert!(sessions.contains(&"sess-1".to_string()));
+        assert_eq!(agent.session_count(), 1);
+        assert!(agent.has_session("sess-1"));
+
+        // Clear the session.
+        agent.clear_session("sess-1");
+        assert!(agent.list_sessions().is_empty());
+        assert_eq!(agent.session_count(), 0);
+        assert!(!agent.has_session("sess-1"));
+
+        // Clearing a non-existent session is a no-op.
+        agent.clear_session("nonexistent");
+        assert_eq!(agent.session_count(), 0);
+    }
+
+    #[test]
+    fn test_get_session_history() {
+        let agent = AgentManager::new(test_config()).unwrap();
+
+        // Session history for a non-existent session should be empty.
+        let history = agent.get_session_history("no-such-session");
+        assert!(history.is_empty());
+
+        // Session history for an existing session should contain the user
+        // message (at minimum) even if the LLM call fails.
+        let _ = agent.send_message("hist-test", "hello world");
+        let history = agent.get_session_history("hist-test");
+        assert!(!history.is_empty());
+        assert_eq!(history[0].role, "user");
+        assert_eq!(history[0].content, "hello world");
+    }
+
+    #[test]
+    fn test_get_tool_descriptions() {
+        let agent = AgentManager::new(test_config()).unwrap();
+        assert!(agent.get_tool_descriptions().is_empty());
+
+        agent.register_tool(Box::new(crate::tools::MarkdownTool::new()));
+        let descs = agent.get_tool_descriptions();
+        assert_eq!(descs.len(), 1);
+        assert_eq!(descs[0].0, "markdown");
+        assert!(!descs[0].1.is_empty());
+    }
+
+    #[test]
+    fn test_set_config() {
+        let mut agent = AgentManager::new(test_config()).unwrap();
+
+        // Change model.
+        agent.set_config("model", "claude-4").unwrap();
+        assert_eq!(agent.config().model, "claude-4");
+
+        // Change temperature.
+        agent.set_config("temperature", "0.9").unwrap();
+        assert!((agent.config().temperature - 0.9).abs() < 0.001);
+
+        // Change max_tokens.
+        agent.set_config("max_tokens", "8192").unwrap();
+        assert_eq!(agent.config().max_tokens, 8192);
+
+        // Change api_endpoint.
+        agent.set_config("api_endpoint", "https://api.anthropic.com/v1/messages").unwrap();
+        assert_eq!(
+            agent.config().api_endpoint,
+            "https://api.anthropic.com/v1/messages"
+        );
+
+        // Change api_key.
+        agent.set_config("api_key", "sk-new-key").unwrap();
+        assert_eq!(agent.config().api_key, "sk-new-key");
+
+        // Unknown key should fail.
+        let err = agent.set_config("unknown_key", "value").unwrap_err();
+        assert!(err.to_string().contains("Unknown config key"));
+    }
+
+    #[test]
+    fn test_get_memory_summary() {
+        let agent = AgentManager::with_default_tools(test_config()).unwrap();
+        let summary = agent.get_memory_summary();
+        assert!(summary.contains("Agent Memory Summary"));
+        assert!(summary.contains("Active sessions"));
+        assert!(summary.contains("Registered tools"));
+        assert!(summary.contains("Uptime"));
+        assert!(summary.contains("test-model"));
+    }
+
+    #[test]
+    fn test_health_check() {
+        let agent = AgentManager::new(test_config()).unwrap();
+        let status = agent.health_check();
+
+        assert_eq!(status.model, "test-model");
+        assert_eq!(
+            status.endpoint,
+            "https://api.example.com/v1/chat/completions"
+        );
+        assert_eq!(status.tool_count, 0);
+        assert_eq!(status.session_count, 0);
+        assert!(status.uptime_secs >= 0.0);
+        // provider_ok may be true or false depending on network; just verify
+        // it's a bool (always true in test since there's no panic).
+        let _: bool = status.provider_ok;
+    }
+
+    #[test]
+    fn test_multiple_sessions() {
+        let agent = AgentManager::new(test_config()).unwrap();
+
+        let _ = agent.send_message("s1", "msg1");
+        let _ = agent.send_message("s2", "msg2");
+        let _ = agent.send_message("s3", "msg3");
+
+        let sessions = agent.list_sessions();
+        assert_eq!(sessions.len(), 3);
+        assert_eq!(agent.session_count(), 3);
+        assert!(agent.has_session("s1"));
+        assert!(agent.has_session("s2"));
+        assert!(agent.has_session("s3"));
     }
 }
