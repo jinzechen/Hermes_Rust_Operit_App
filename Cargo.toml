@@ -1,6 +1,6 @@
 [package]
 name = "hermes_rust_operit_app"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "纯 Rust 重构的 Operit Android 应用 — 高性能 AI 助手工具链"
 
@@ -12,81 +12,78 @@ path = "src/lib.rs"
 name = "hermes_operit_app"
 path = "src/main.rs"
 
+# ═══ 纯 Rust 依赖 ═══
 [dependencies]
-# === Async runtime ===
+# Async runtime
 tokio = { version = "1", features = ["full"] }
 
-# === Serialization ===
+# Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 
-# === Code Analysis (Understand_Anything_Rust) ===
+# Code Analysis (Understand_Anything_Rust)
 ua-core = { path = "../Understand_Anything_Rust/crates/ua-core" }
 
-# === Database ===
+# Database
 redb = "1"
 
-# === Logging ===
+# Logging
 log = "0.4"
 env_logger = "0.11"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 
-# === Error handling ===
+# Error handling
 thiserror = "1"
 anyhow = "1"
 
-# === Async traits ===
+# Async traits
 async-trait = "0.1"
 
-# === Misc utilities ===
+# Utilities
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 parking_lot = "0.12"
 once_cell = "1"
 directories = "5"
 
-# === MCP Protocol (custom implementation, no external SDK) ===
-# MCP JSON-RPC 2.0 over stdio — lightweight, zero-dependency protocol
-
-# === Built-in tools (will be integrated as source modules) ===
-# These are listed here for reference; actual integration varies:
-# - obscura: built as local module (browser automation)
-# - agentic-vision: built as local module (image analysis)
-# - rust_mcp_filesystem: core logic extracted to module
-# - typemill: markdown processing compiled in
-
-# === Filesystem tools ===
+# Filesystem tools
 walkdir = "2"
 flate2 = "1"
 zip = { version = "0.6", default-features = false, features = ["deflate", "time"] }
 regex = "1"
-moka = { version = "0.12.15", features = ["future", "sync"] }
-scraper = "0.27.0"
+
+# Cache & Search
+moka = { version = "0.12", features = ["future", "sync"] }
+scraper = "0.27"
 sha2 = "0.10"
-rmcp = "2.2.0"
-hermes-core = { git = "https://github.com/Lumio-Research/hermes-agent-rs", version = "0.1.1" }
-tantivy = { version = "0.26.1", default-features = false, features = ["mmap"] }
-reqwest = { version = "0.13.4", default-features = false, features = ["json", "blocking", "native-tls"] }
+tantivy = { version = "0.26", default-features = false, features = ["mmap"] }
+
+# MCP Protocol
+rmcp = "2.2"
+
+# HTTP
+reqwest = { version = "0.13", default-features = false, features = ["json", "blocking", "native-tls"] }
+
+# OAuth
 oauth2 = { version = "4.4", default-features = false, features = ["reqwest"] }
-dioxus = { version = "0.7.9", features = ["web"] }
-dioxus-html = "0.7.9"
 
-# === UI (Dioxus for Android) ===
-# dioxus = { version = "0.5", features = ["mobile"] }
-# dioxus-mobile = "0.5"
-# NOTE: Uncomment above when building for Android with NDK.
-# For development, UI modules are defined but compiled-out.
+# Android: 取消下面注释 + 安装 NDK 后执行:
+#   rustup target add aarch64-linux-android
+#   cargo install cargo-ndk
+#   cargo ndk -t aarch64-linux-android -p 26 build --release
+#   → 输出: target/aarch64-linux-android/release/libhermes_operit_core.so
+#   → 配合 Dioxus CLI: dx build --platform android
 
-# === Sandbox (Linux only) ===
-# seccomp = "0.3"
-# landlock = "0.3"
-# NOTE: Android seccomp requires bionic libc bindings. Platform-gated.
+# Windows 本地测试:
+#   cargo build --release
+#   ./target/release/hermes_operit_app.exe
 
-# === Android JNI bridge ===
+# Android JNI bridge (纯 Rust, 仅在 Android 目标编译)
 [target.'cfg(target_os = "android")'.dependencies]
 jni = { version = "0.21", features = ["invocation"] }
+dioxus-mobile = "0.5"
 
 [profile.release]
 lto = true
