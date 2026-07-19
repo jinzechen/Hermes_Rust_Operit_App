@@ -66,8 +66,26 @@ jobs:
           keytool -genkey -v -keystore debug.keystore -storepass android -keypass android \
             -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Debug, OU=Hermes, O=Operit, L=Shanghai, ST=Shanghai, C=CN" 2>/dev/null
+          # Compile Java to DEX
+          mkdir -p target/java_classes
+          javac -source 8 -target 8 -d target/java_classes \
+            -cp "$ANDROID_HOME/platforms/android-34/android.jar" \
+            src/android/java/com/operit/hermes/MainActivity.java
+          $ANDROID_HOME/build-tools/34.0.0/d8 \
+            --lib "$ANDROID_HOME/platforms/android-34/android.jar" \
+            --output target/java_classes/ \
+            target/java_classes/com/operit/hermes/MainActivity.class
+          # Build
           cargo install cargo-apk
           cargo apk build --lib
+          # Inject DEX
+          APK=target/debug/apk/HermesOperit.apk
+          cp "$APK" "$APK.tmp"
+          cd target/java_classes && jar uf "../../$APK.tmp" classes.dex && cd ../..
+          mv "$APK.tmp" "$APK"
+          # Re-sign
+          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks debug.keystore \
+            --ks-pass pass:android --key-pass pass:android "$APK"
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
