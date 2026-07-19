@@ -1,7 +1,5 @@
-//! Android entry point — NativeActivity onCreate handler.
-//!
-//! Runs on the Android MAIN thread (has proper Looper for WebView).
-//! Also delegates lifecycle management to ndk_glue.
+//! Android entry point — runs on MAIN thread.
+//! WebView MUST be created on main thread (w/ proper Looper).
 
 use jni::objects::JObject;
 use std::ffi::c_void;
@@ -17,12 +15,11 @@ struct NativeActivityRaw {
 #[no_mangle]
 pub extern "C" fn ANativeActivity_onCreate(
     activity: *mut c_void,
-    saved_state: *mut c_void,
-    saved_state_size: usize,
+    _saved_state: *mut c_void,
+    _saved_state_size: usize,
 ) {
     let act = unsafe { &*(activity as *const NativeActivityRaw) };
 
-    // Init logging
     android_logger::init_once(
         android_logger::Config::default()
             .with_max_level(log::LevelFilter::Debug)
@@ -35,14 +32,9 @@ pub extern "C" fn ANativeActivity_onCreate(
     let mut env = jvm.get_env().expect("JNIEnv");
     let activity_jobj = unsafe { JObject::from_raw(act.clazz) };
 
-    // Create WebView directly on the main thread
     crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
 
-    log::info!("WebView created on main thread. Starting ndk_glue lifecycle...");
-
-    // Now hand over to ndk_glue for lifecycle management
-    // (input events, pause/resume, etc.)
-    ndk_glue::init(activity, saved_state, saved_state_size);
+    log::info!("HermesOperit ready on main thread");
 }
 
 #[cfg(not(target_os = "android"))]

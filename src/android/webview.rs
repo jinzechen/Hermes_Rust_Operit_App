@@ -36,8 +36,8 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         .call_method(&webview, "getSettings", "()Landroid/webkit/WebSettings;", &[])
         .unwrap();
     let s = settings.l().unwrap();
-    let _ = env.call_method(s, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(1)]);
-    let _ = env.call_method(s, "setDomStorageEnabled", "(Z)V", &[JValue::Bool(1)]);
+    let _ = env.call_method(&s, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(1)]);
+    let _ = env.call_method(&s, "setDomStorageEnabled", "(Z)V", &[JValue::Bool(1)]);
 
     // Store global ref
     let global = env.new_global_ref(&webview).unwrap();
