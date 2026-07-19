@@ -9,9 +9,7 @@
 //! 3. `tools/list`  → discover available tools
 //! 4. `tools/call`  → invoke a tool by name
 
-use std::collections::HashMap;
 use std::fmt;
-use std::io;
 use std::process::Stdio;
 use std::time::Duration;
 

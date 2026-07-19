@@ -97,7 +97,7 @@ impl Chat {
 /// The chat page component — full conversation interface.
 #[component]
 pub fn ChatPage() -> Element {
-    let mut messages = use_signal(Vec::<ChatMessage>::new);
+    let messages = use_signal(Vec::<ChatMessage>::new);
     let mut input_text = use_signal(String::new);
 
     let mut send_message = {
