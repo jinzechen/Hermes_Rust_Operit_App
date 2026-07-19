@@ -1,49 +1,21 @@
-//! Android entry point — main thread with full lifecycle callbacks.
-//! Creates WebView after window surface is ready.
+//! Android entry point — main thread with ndk_sys lifecycle callbacks.
+//! Creates WebView from onNativeWindowCreated callback.
 
 use jni::objects::JObject;
 use std::ffi::c_void;
 
-#[repr(C)]
-struct NativeActivityRaw {
-    callbacks: *mut c_void,
-    vm: *mut *const jni::sys::JNIInvokeInterface_,
-    _env: *mut c_void,
-    clazz: jni::sys::jobject,
-}
+static mut WEBVIEW_CREATED: bool = false;
+static mut JVM_PTR: *mut *const jni::sys::JNIInvokeInterface_ = std::ptr::null_mut();
 
-// Callback type signatures
-type VoidCb = unsafe extern "C" fn(activity: *mut c_void);
-
-#[repr(C)]
-struct ActivityCallbacks {
-    onStart: Option<VoidCb>,
-    onResume: Option<VoidCb>,
-    onSaveInstanceState: Option<unsafe extern "C" fn(*mut c_void, *mut usize) -> *mut c_void>,
-    onPause: Option<VoidCb>,
-    onStop: Option<VoidCb>,
-    onDestroy: Option<VoidCb>,
-    onWindowFocusChanged: Option<unsafe extern "C" fn(*mut c_void, i32)>,
-    onNativeWindowCreated: Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>,
-    onNativeWindowResized: Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>,
-    onNativeWindowRedrawNeeded: Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>,
-    onNativeWindowDestroyed: Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>,
-    onInputQueueCreated: Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>,
-    onInputQueueDestroyed: Option<unsafe extern "C" fn(*mut c_void, *mut c_void)>,
-    onContentRectChanged: Option<unsafe extern "C" fn(*mut c_void, *const ndk_sys::ARect)>,
-    onConfigurationChanged: Option<VoidCb>,
-    onLowMemory: Option<VoidCb>,
-}
-
-static mut ACT_CBS: ActivityCallbacks = ActivityCallbacks {
-    onStart: Some(on_start_resume),
-    onResume: Some(on_start_resume),
+static mut ACT_CBS: ndk_sys::ANativeActivityCallbacks = ndk_sys::ANativeActivityCallbacks {
+    onStart: Some(on_started),
+    onResume: Some(on_started),
     onSaveInstanceState: None,
     onPause: None,
     onStop: None,
     onDestroy: None,
     onWindowFocusChanged: None,
-    onNativeWindowCreated: Some(on_native_window_created),
+    onNativeWindowCreated: Some(on_window_created),
     onNativeWindowResized: None,
     onNativeWindowRedrawNeeded: None,
     onNativeWindowDestroyed: None,
@@ -54,16 +26,13 @@ static mut ACT_CBS: ActivityCallbacks = ActivityCallbacks {
     onLowMemory: None,
 };
 
-static mut WEBVIEW_CREATED: bool = false;
-static mut JVM_PTR: *mut *const jni::sys::JNIInvokeInterface_ = std::ptr::null_mut();
-
 #[no_mangle]
 pub extern "C" fn ANativeActivity_onCreate(
     activity: *mut c_void,
     _saved_state: *mut c_void,
     _saved_state_size: usize,
 ) {
-    let act = unsafe { &mut *(activity as *mut NativeActivityRaw) };
+    let act = unsafe { &mut *(activity as *mut ndk_sys::ANativeActivity) };
 
     android_logger::init_once(
         android_logger::Config::default()
@@ -73,13 +42,14 @@ pub extern "C" fn ANativeActivity_onCreate(
 
     log::info!("HermesOperit onCreate (MAIN thread)");
 
-    // Set our callbacks BEFORE the system calls them
+    // Hook callbacks
     unsafe {
         JVM_PTR = act.vm;
-        act.callbacks = &ACT_CBS as *const _ as *mut c_void;
+        act.callbacks = &ACT_CBS as *const _ as *mut _;
     }
 
-    // Event loop
+    log::info!("Callbacks hooked. Entering event loop...");
+
     loop {
         let mut fdesc: i32 = 0;
         let mut events: i32 = 0;
@@ -90,15 +60,17 @@ pub extern "C" fn ANativeActivity_onCreate(
     }
 }
 
-unsafe extern "C" fn on_start_resume(_activity: *mut c_void) {
+unsafe extern "C" fn on_started(_activity: *mut c_void) {
     log::info!("Lifecycle: onStart/onResume");
 }
 
-unsafe extern "C" fn on_native_window_created(activity: *mut c_void, _window: *mut c_void) {
-    if WEBVIEW_CREATED { return; }
+unsafe extern "C" fn on_window_created(activity: *mut c_void, _window: *mut c_void) {
+    if WEBVIEW_CREATED {
+        return;
+    }
     WEBVIEW_CREATED = true;
 
-    log::info!("NativeWindow created — creating WebView...");
+    log::info!("onNativeWindowCreated — creating WebView on main thread!");
 
     let jvm = jni::JavaVM::from_raw(JVM_PTR).unwrap();
     let mut env = jvm.get_env().unwrap();
@@ -106,7 +78,7 @@ unsafe extern "C" fn on_native_window_created(activity: *mut c_void, _window: *m
 
     crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
 
-    log::info!("WebView created via onNativeWindowCreated callback!");
+    log::info!("WebView created successfully!");
 }
 
 #[cfg(not(target_os = "android"))]
