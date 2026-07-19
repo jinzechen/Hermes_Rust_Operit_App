@@ -106,9 +106,8 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
 
     log::info!("[WebView] WebSettings configured");
 
-    // ── 5. Add JavaScript interface for Rust↔JS bridged ──
-    // Uses the existing HermesBridge JNI functions exposed via @JavascriptInterface
-    // on the Kotlin side. For now, create a simple bridge object.
+    // ── 5. Add JavaScript interface for Rust↔JS bridge ──
+    // Skip if HermesBridge class doesn't exist (pure Rust — no Kotlin companion)
     match env.find_class("com/operit/hermes/bridge/HermesBridge") {
         Ok(cls) => {
             let bridge = env.new_object(&cls, "()V", &[]).unwrap();
@@ -124,7 +123,9 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
             log::info!("[WebView] JavascriptInterface HermesBridge registered");
         }
         Err(_) => {
-            log::warn!("[WebView] HermesBridge class not found (no Kotlin companion?)");
+            // Clear the pending JNI exception from failed find_class
+            let _ = env.exception_clear();
+            log::warn!("[WebView] HermesBridge class not found (pure Rust, skipping JS bridge)");
         }
     }
 
