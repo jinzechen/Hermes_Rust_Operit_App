@@ -7,6 +7,16 @@
 use jni::objects::JObject;
 use std::ffi::c_void;
 
+/// ANativeActivity raw layout (from android/native_activity.h).
+/// We only need the first 4 fields.
+#[repr(C)]
+struct NativeActivityRaw {
+    callbacks: *mut c_void,
+    vm: *mut *const jni::sys::JNIInvokeInterface_,
+    _env: *mut c_void,
+    clazz: jni::sys::jobject,
+}
+
 /// Called by the Android framework on the MAIN thread.
 /// Creates the WebView directly — no thread-spawning wrapper.
 #[no_mangle]
@@ -15,19 +25,12 @@ pub extern "C" fn ANativeActivity_onCreate(
     _saved_state: *mut c_void,
     _saved_state_size: usize,
 ) {
-    // activity is an ANativeActivity* — we need to extract the JavaVM
-    // and the JNI environment from it.
-    // ANativeActivity layout: clazz, vm, env, ...
-    // vm is at offset after ANativeActivity_callbacks (callbacks + instance data etc.)
-    // Actually, we use the ndk::ffi types to access it properly.
+    let act = unsafe { &*(activity as *const NativeActivityRaw) };
 
-    let activity_ref = unsafe { &*(activity as *const ndk::ffi::ANativeActivity) };
+    // Get JavaVM from the ANativeActivity struct
+    let jvm = unsafe { jni::JavaVM::from_raw(act.vm) }.expect("JavaVM");
 
-    // Get JavaVM pointer from the activity
-    let vm_ptr = activity_ref.vm as *mut *const jni::sys::JNIInvokeInterface_;
-    let jvm = unsafe { jni::JavaVM::from_raw(vm_ptr) }.expect("JavaVM");
-
-    // Get the JNI environment that's already attached on the main thread
+    // Get JNI env already attached on the main thread
     let mut env = jvm.get_env().expect("JNIEnv on main thread");
 
     // Initialize logging
@@ -39,12 +42,11 @@ pub extern "C" fn ANativeActivity_onCreate(
 
     log::info!("HermesOperit starting (main thread, ANativeActivity_onCreate)...");
 
-    // Get the Activity JObject from the ANativeActivity's clazz field
-    let activity_jobj = unsafe { JObject::from_raw(activity_ref.clazz as jni::sys::jobject) };
+    // Get the Activity JObject
+    let activity_jobj = unsafe { JObject::from_raw(act.clazz) };
 
-    // Create WebView directly on the main thread (has Looper!)
+    // Create WebView directly on the main thread
     crate::android::webview::init_webview(&mut env, &activity_jobj);
 
     log::info!("HermesOperit WebView initialized on main thread");
-    // The native activity event loop continues after this function returns.
 }
