@@ -26,12 +26,14 @@ fn android_main() {
     // native.activity() returns *mut _jobject (= jni::sys::jobject)
     let native = ndk_glue::native_activity();
 
-    // Attach to the JVM — vm_ptr is already the right type for JavaVM::from_raw
+    // Attach to the JVM — use get_env() because we're already on
+    // the Android main thread (ndk_glue::main). attach_current_thread()
+    // would disrupt the Looper and crash WebView construction.
     let jvm = unsafe { jni::JavaVM::from_raw(native.vm()) }
         .expect("Failed to get JavaVM");
     let mut env = jvm
-        .attach_current_thread()
-        .expect("Failed to attach to JVM thread");
+        .get_env()
+        .expect("Failed to get JNI env on main thread");
 
     // activity pointer is already *mut _jobject, wrap in JObject
     let activity = unsafe { JObject::from_raw(native.activity()) };
