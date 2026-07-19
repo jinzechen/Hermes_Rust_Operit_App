@@ -1,8 +1,16 @@
 [package]
 name = "hermes_rust_operit_app"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "纯 Rust 重构的 Operit Android 应用 — 高性能 AI 助手工具链"
+
+[package.metadata.android]
+package_name = "com.operit.hermes"
+apk_name = "HermesOperit"
+target_sdk_version = 34
+min_sdk_version = 26
+activity_name = "android.app.NativeActivity"
+features = ["android.hardware.touchscreen"]
 
 [lib]
 name = "hermes_operit_core"
