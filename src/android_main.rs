@@ -7,6 +7,9 @@
 //! rendering on Android (dioxus-mobile 0.5.x Android support is experimental).
 
 #[cfg(target_os = "android")]
+use jni::objects::JObject;
+
+#[cfg(target_os = "android")]
 #[ndk_glue::main(backtrace = "on")]
 fn android_main() {
     // Initialize Android logger so output goes to logcat
@@ -18,19 +21,20 @@ fn android_main() {
 
     log::info!("HermesOperit starting on Android (JNI WebView mode)...");
 
-    // Get the NativeActivity JNI handle via ndk-glue
+    // Get the NativeActivity JNI handles via ndk-glue.
+    // native.vm() returns *mut *const JNIInvokeInterface_ (= jni::sys::JavaVM)
+    // native.activity() returns *mut _jobject (= jni::sys::jobject)
     let native = ndk_glue::native_activity();
-    let vm_ptr = native.vm();
-    let activity_jobj = native.activity();
 
-    // Attach to the JVM
-    let jvm = unsafe { jni::JavaVM::from_raw(vm_ptr.as_ptr() as *mut _) }
+    // Attach to the JVM — vm_ptr is already the right type for JavaVM::from_raw
+    let jvm = unsafe { jni::JavaVM::from_raw(native.vm()) }
         .expect("Failed to get JavaVM");
     let mut env = jvm
         .attach_current_thread()
         .expect("Failed to attach to JVM thread");
 
-    let activity = unsafe { JObject::from_raw(activity_jobj.as_ptr() as jni::sys::jobject) };
+    // activity pointer is already *mut _jobject, wrap in JObject
+    let activity = unsafe { JObject::from_raw(native.activity()) };
 
     log::info!("[Main] JVM attached, initializing WebView...");
 
@@ -39,10 +43,6 @@ fn android_main() {
 
     log::info!("HermesOperit WebView initialized");
 }
-
-// Re-export JObject for use in android_main
-#[cfg(target_os = "android")]
-use jni::objects::JObject;
 
 // On non-Android targets, this file compiles to nothing.
 #[cfg(not(target_os = "android"))]
