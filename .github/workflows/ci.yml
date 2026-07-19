@@ -55,13 +55,13 @@ jobs:
           mkdir -p android-sdk/cmdline-tools/latest
           mv cmdline-tools/* android-sdk/cmdline-tools/latest/
           export ANDROID_SDK_ROOT=$PWD/android-sdk
-          printf 'y\ny\ny\ny\ny\ny\ny\ny\ny\ny\n' | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses >/dev/null 2>&1
-          printf 'y\ny\ny\ny\ny\ny\ny\ny\ny\ny\n' | android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
-            "build-tools;35.0.0" "platforms;android-35" "platform-tools" "ndk;27.0.12077973" >/dev/null 2>&1
+          android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses >/dev/null 2>&1 <<< $(printf 'y\ny\ny\ny\ny\ny\ny\ny\ny\ny\n')
+          android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT \
+            "build-tools;34.0.0" "platforms;android-34" "platform-tools" "ndk;26.1.10909125" >/dev/null 2>&1 <<< $(printf 'y\ny\ny\ny\ny\ny\ny\ny\ny\ny\n')
           export ANDROID_HOME=$ANDROID_SDK_ROOT
           echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
       - name: Build APK
         run: |
           keytool -genkey -v -keystore debug.keystore -storepass android -keypass android \
