@@ -1,183 +1,52 @@
-//! JNI-driven WebView — creates and manages android.webkit.WebView directly.
+//! JNI-driven WebView — delegates UI-thread work to Java WebViewHelper.
 //!
-//! Avoids dioxus-mobile/tao/wry's experimental Android support by using
-//! raw JNI calls to create a WebView inside the NativeActivity.
+//! WebView MUST be created on the real Android main thread.
+//! Looper.prepare() on a worker thread is NOT sufficient —
+//! Android checks Thread.currentThread() == mainThread.
 //!
 //! Architecture:
-//!   NativeActivity (ndk-glue) → JNI → android.webkit.WebView
-//!   WebView loads HTML chat UI → JS ↔ Rust via JavascriptInterface
+//!   NativeActivity (ndk_glue) → worker thread (android_main)
+//!   → JNI → WebViewHelper.createOnUiThread(activity)
+//!   → UI thread: creates WebView, configures, loads HTML, setContentView
 
 use jni::objects::{GlobalRef, JObject, JValue};
 use jni::JNIEnv;
 use log;
 
-/// Holds global references to the WebView and related JNI objects
-/// so they survive across JNI calls.
 static mut WEBVIEW_REF: Option<GlobalRef> = None;
 
-/// Initialize a WebView inside the current NativeActivity.
-///
-/// Called from android_main() on the Android main thread.
-/// Sets up JavaScript interface for Rust↔JS communication and
-/// loads the chat UI HTML.
+/// Set the HTML content on the Java helper, then delegate WebView
+/// creation to the UI thread via WebViewHelper.createOnUiThread().
 pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
-    log::info!("[WebView] Initializing...");
+    log::info!("[WebView] Setting HTML + delegating to UI thread...");
 
-    // ── 1. Get Activity → Window → DecorView ──
-    let window = match env.call_method(activity, "getWindow", "()Landroid/view/Window;", &[]) {
-        Ok(w) => w,
-        Err(e) => {
-            log::error!("[WebView] getWindow failed: {e}");
-            return;
-        }
-    };
-
-    let decor = match env.call_method(
-        &window.l().unwrap(),
-        "getDecorView",
-        "()Landroid/view/View;",
-        &[],
-    ) {
-        Ok(d) => d,
-        Err(e) => {
-            log::error!("[WebView] getDecorView failed: {e}");
-            return;
-        }
-    };
-
-    // ── 2. Get content parent (FrameLayout) ──
-    let content = match env.call_method(
-        &decor.l().unwrap(),
-        "findViewById",
-        "(I)Landroid/view/View;",
-        &[JValue::Int(0x01020002)], // android.R.id.content
-    ) {
-        Ok(c) => c,
-        Err(e) => {
-            log::error!("[WebView] findViewById(content) failed: {e}");
-            return;
-        }
-    };
-
-    // ── 3. Create WebView ──
-    let ctx = JObject::from(env.call_method(
-        activity,
-        "getApplicationContext",
-        "()Landroid/content/Context;",
-        &[],
-    ).unwrap().l().unwrap());
-
-    let webview = match env.new_object(
-        "android/webkit/WebView",
-        "(Landroid/content/Context;)V",
-        &[JValue::Object(&ctx)],
-    ) {
-        Ok(w) => w,
-        Err(e) => {
-            log::error!("[WebView] new WebView failed: {e}");
-            return;
-        }
-    };
-
-    // ── 4. Configure WebSettings ──
-    let settings = env
-        .call_method(
-            &webview,
-            "getSettings",
-            "()Landroid/webkit/WebSettings;",
-            &[],
-        )
-        .unwrap();
-    let settings_obj = settings.l().unwrap();
-
-    let _ = env.call_method(&settings_obj, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(1)]);
-    let _ = env.call_method(
-        &settings_obj,
-        "setDomStorageEnabled",
-        "(Z)V",
-        &[JValue::Bool(1)],
-    );
-    let _ = env.call_method(
-        &settings_obj,
-        "setAllowFileAccess",
-        "(Z)V",
-        &[JValue::Bool(1)],
-    );
-
-    log::info!("[WebView] WebSettings configured");
-
-    // ── 5. Add JavaScript interface for Rust↔JS bridge ──
-    // Skip if HermesBridge class doesn't exist (pure Rust — no Kotlin companion)
-    match env.find_class("com/operit/hermes/bridge/HermesBridge") {
-        Ok(cls) => {
-            let bridge = env.new_object(&cls, "()V", &[]).unwrap();
-            let _ = env.call_method(
-                &webview,
-                "addJavascriptInterface",
-                "(Ljava/lang/Object;Ljava/lang/String;)V",
-                &[
-                    JValue::Object(&bridge),
-                    JValue::Object(&env.new_string("HermesBridge").unwrap()),
-                ],
-            );
-            log::info!("[WebView] JavascriptInterface HermesBridge registered");
-        }
-        Err(_) => {
-            // Clear the pending JNI exception from failed find_class
-            let _ = env.exception_clear();
-            log::warn!("[WebView] HermesBridge class not found (pure Rust, skipping JS bridge)");
-        }
-    }
-
-    // ── 6. Store global ref so WebView stays alive ──
-    let global = env.new_global_ref(&webview).unwrap();
-    unsafe {
-        WEBVIEW_REF = Some(global);
-    }
-
-    // ── 7. Post setContentView to main thread via Java helper ──
-    // setContentView MUST run on the UI thread (CalledFromWrongThreadException).
-    // Our Java helper posts a Runnable to Activity.runOnUiThread().
+    // ── 1. Set the HTML content on the Java helper ──
+    let html = get_chat_html();
     let helper = env
         .find_class("com/operit/hermes/WebViewHelper")
-        .expect("WebViewHelper class must be bundled (src/android/java/...)");
+        .expect("WebViewHelper class not found — check DEX injection");
 
     env.call_static_method(
         &helper,
-        "setupWebViewOnUiThread",
-        "(Landroid/app/Activity;Landroid/webkit/WebView;)V",
-        &[JValue::Object(activity), JValue::Object(&webview)],
+        "setHtml",
+        "(Ljava/lang/String;)V",
+        &[JValue::Object(&env.new_string(&html).unwrap())],
     )
-    .expect("setupWebViewOnUiThread");
-    log::info!("[WebView] Posted setContentView to UI thread");
+    .expect("WebViewHelper.setHtml");
+    log::info!("[WebView] HTML set ({} bytes)", html.len());
 
-    // ── 8. Load HTML ──
-    let html = get_chat_html();
-    let base_url = env.new_string("file:///android_asset/").unwrap();
-    let mime = env.new_string("text/html").unwrap();
-    let encoding = env.new_string("utf-8").unwrap();
-    let history = env.new_string("about:blank").unwrap();
-
-    let _ = env.call_method(
-        &webview,
-        "loadDataWithBaseURL",
-        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-        &[
-            JValue::Object(&base_url),
-            JValue::Object(&env.new_string(&html).unwrap()),
-            JValue::Object(&mime),
-            JValue::Object(&encoding),
-            JValue::Object(&history),
-        ],
-    );
-
-    log::info!("[WebView] HTML loaded, length={} bytes", html.len());
+    // ── 2. Post WebView creation to UI thread ──
+    env.call_static_method(
+        &helper,
+        "createOnUiThread",
+        "(Landroid/app/Activity;)V",
+        &[JValue::Object(activity)],
+    )
+    .expect("WebViewHelper.createOnUiThread");
+    log::info!("[WebView] Posted WebView creation to UI thread");
 }
 
 /// Chat UI HTML — inlined for zero external file dependencies.
-///
-/// The JavaScript in this page communicates with Rust via:
-///   window.HermesBridge.nativeSendMessage(ptr, msg) → returns reply
 fn get_chat_html() -> String {
     r#"<!DOCTYPE html>
 <html lang="zh-CN">
@@ -239,40 +108,19 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function setStatus(text) {
-  statusEl.textContent = text;
-}
+function setStatus(text) { statusEl.textContent = text; }
 
 function sendMessage() {
   const text = input.value.trim();
   if (!text) return;
   addMessage(text, 'user');
   input.value = '';
-  setStatus('思考中...');
-
-  // Try to call native bridge
-  if (window.HermesBridge && typeof window.HermesBridge.sendToRust === 'function') {
-    try {
-      const reply = window.HermesBridge.sendToRust(text);
-      addMessage(reply || '(empty reply)', 'ai');
-      setStatus('已连接');
-    } catch (e) {
-      addMessage('[Bridge error: ' + e + ']', 'system');
-      setStatus('Bridge 错误');
-    }
-  } else {
-    // Fallback: echo for testing
-    setTimeout(() => {
-      addMessage('[Hermes Bridge 未连接 — 回显测试] ' + text, 'system');
-      setStatus('Bridge 未连接 (测试模式)');
-    }, 300);
-  }
+  setStatus('Echo:');
+  setTimeout(() => { addMessage(text, 'ai'); setStatus('已连接'); }, 200);
 }
 
 sendBtn.addEventListener('click', sendMessage);
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') sendMessage();
-});
+input.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
 </script>
 </body>
 </html>"#

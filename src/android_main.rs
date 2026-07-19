@@ -1,8 +1,9 @@
 //! Android entry point — NativeActivity via ndk_glue::main.
 //!
-//! ndk_glue handles the NativeActivity lifecycle (callbacks, ALooper)
-//! and spawns a worker thread for us. We prepare a Looper on this thread
-//! so WebView can initialize (it needs Handler/Looper).
+//! ndk_glue handles the NativeActivity lifecycle and spawns a worker thread.
+//! We attach JNI, set the HTML, and delegate WebView creation to the UI
+//! thread via Java's WebViewHelper.createOnUiThread().
+//! The worker thread then blocks waiting for native activity events.
 
 #[cfg(target_os = "android")]
 use jni::objects::JObject;
@@ -22,20 +23,11 @@ fn android_main() {
     let jvm = unsafe { jni::JavaVM::from_raw(native.vm()) }.expect("JavaVM");
     let mut env = jvm.attach_current_thread().expect("JNI attach");
 
-    // WebView requires a Looper on the creating thread
-    log::info!("[Main] Preparing Looper...");
-    env.call_static_method("android/os/Looper", "prepare", "()V", &[])
-        .expect("Looper.prepare");
-
     let activity = unsafe { JObject::from_raw(native.activity()) };
 
-    log::info!("[Main] Creating WebView...");
+    log::info!("[Main] Delegating WebView to UI thread via Java helper...");
     crate::android::webview::init_webview(&mut env, &activity);
-    log::info!("HermesOperit WebView ready, entering Looper.loop()...");
-
-    // Process events on our thread's Looper (blocks forever)
-    env.call_static_method("android/os/Looper", "loop", "()V", &[])
-        .expect("Looper.loop");
+    log::info!("HermesOperit done — worker thread idle. UI thread handles WebView.");
 }
 
 #[cfg(not(target_os = "android"))]
