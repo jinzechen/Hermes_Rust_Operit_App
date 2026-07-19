@@ -97,10 +97,14 @@ dx build --platform android
 
 | 二进制 | 大小 | 来源 | 用途 |
 |---|---|---|---|
+| `thclaws.exe` | 59MB | thClaws/thClaws (源码编译) | Rust AI Agent |
+| `thclaws-cli.exe` | 55MB | thClaws/thClaws (源码编译) | Agent CLI |
+| `hermes.exe` | 25MB | Lumio-Research/hermes-agent-rs (源码编译) | Hermes Agent |
+| `hermes-server.exe` | 16MB | Lumio-Research/hermes-agent-rs (源码编译) | HTTP Server |
 | `obscura.exe` | 59MB | h4ckf0r0day/obscura v0.1.10 | CDP 无头浏览器 |
-| `obscura-worker.exe` | 55MB | h4ckf0r0day/obscura v0.1.10 | 浏览器 Worker 进程 |
-| `ua.exe` | 4.5MB | jinzechen/Understand_Anything_Rust | Rust 代码知识图谱 |
-| `rhai-run.exe` | 2.9MB | rhaiscript/rhai | 嵌入式脚本引擎 |
+| `obscura-worker.exe` | 55MB | h4ckf0r0day/obscura v0.1.10 | 浏览器 Worker |
+| `ua.exe` | 4.5MB | jinzechen/Understand_Anything_Rust (源码编译) | 代码知识图谱 |
+| `rhai-run.exe` | 2.9MB | rhaiscript/rhai (源码编译) | 嵌入式脚本引擎 |
 
 > 下载: `bash scripts/setup.sh`
 
