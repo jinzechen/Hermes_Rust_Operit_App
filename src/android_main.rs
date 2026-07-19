@@ -19,7 +19,7 @@ type VoidCb = unsafe extern "C" fn(activity: *mut c_void);
 struct ActivityCallbacks {
     onStart: Option<VoidCb>,
     onResume: Option<VoidCb>,
-    onSaveInstanceState: Option<VoidCb>,
+    onSaveInstanceState: Option<unsafe extern "C" fn(*mut c_void, *mut usize) -> *mut c_void>,
     onPause: Option<VoidCb>,
     onStop: Option<VoidCb>,
     onDestroy: Option<VoidCb>,
