@@ -83,11 +83,26 @@ dx build --platform android
 
 ## UA 源码分析数据 / UA Source Analysis Data
 
-| 项目 | 文件数 | Rust 文件 | 节点 | 边 | 层 |
+| 项目 | 总文件 | Rust 文件 | 节点 | 边 | 层 |
 |---|---|---|---|---|---|
 | Operit_MCPS | 1,229 | 659 | 1,505 | 1,556 | 5 |
+| thClaws | 641 | 260 | 723 | 711 | 4 |
+| tantivy | 517 | 433 | 626 | 602 | 3 |
+| zeptoclaw | 493 | 307 | 597 | 574 | 4 |
 | UA Rust (自分析) | — | 28 | 1,641 | 1,623 | 3 |
+| rhai | 408 | 272 | 448 | 431 | 3 |
 | hermes-agent-rs | 579 | 352 | 700 | 694 | 4 |
+
+## 已编译集成的二进制 / Compiled Binaries
+
+| 二进制 | 大小 | 来源 | 用途 |
+|---|---|---|---|
+| `obscura.exe` | 59MB | h4ckf0r0day/obscura v0.1.10 | CDP 无头浏览器 |
+| `obscura-worker.exe` | 55MB | h4ckf0r0day/obscura v0.1.10 | 浏览器 Worker 进程 |
+| `ua.exe` | 4.5MB | jinzechen/Understand_Anything_Rust | Rust 代码知识图谱 |
+| `rhai-run.exe` | 2.9MB | rhaiscript/rhai | 嵌入式脚本引擎 |
+
+> 下载: `bash scripts/setup.sh`
 
 ---
 

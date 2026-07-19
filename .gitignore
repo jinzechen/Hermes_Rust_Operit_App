@@ -1,3 +1,13 @@
-/target
-target/
-libmod.rmeta
+# Binary dependencies (downloaded by setup.sh)
+/bin/
+
+# Build output
+/target/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
