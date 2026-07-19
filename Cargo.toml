@@ -96,10 +96,9 @@ dioxus = { version = "0.5", features = ["html"] }
 #   cargo build --release
 #   ./target/release/hermes_operit_app.exe
 
-# Android JNI bridge (纯 Rust, 仅在 Android 目标编译)
+# Android JNI bridge (pure Rust, Android target only)
 [target.'cfg(target_os = "android")'.dependencies]
 jni = { version = "0.21", features = ["invocation"] }
-dioxus-mobile = "0.5"
 ndk-glue = "0.7"
 android_logger = "0.14"
 

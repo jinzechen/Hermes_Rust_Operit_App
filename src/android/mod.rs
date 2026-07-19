@@ -15,3 +15,6 @@ pub mod notification;
 
 #[cfg(target_os = "android")]
 pub mod clipboard;
+
+#[cfg(target_os = "android")]
+pub mod webview;
