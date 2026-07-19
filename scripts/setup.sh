@@ -27,3 +27,12 @@ fi
 
 echo "=== Done ==="
 ls -la "$BIN_DIR"/*.exe 2>/dev/null || echo "  (no binaries yet)"
+
+echo "=== Building hermes-agent-rs ==="
+HERMES_DIR="$(dirname "$0")/../../hermes-agent-rs"
+if [ -d "$HERMES_DIR" ]; then
+    cd "$HERMES_DIR" && cargo build --release
+    cp target/release/hermes.exe "$BIN_DIR/"
+    cp target/release/hermes-server.exe "$BIN_DIR/"
+    echo "  hermes.exe OK"
+fi
