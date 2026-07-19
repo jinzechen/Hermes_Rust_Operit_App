@@ -81,11 +81,12 @@ jobs:
           # Build APK
           cargo install cargo-apk
           cargo apk build --lib
-          # Inject classes.dex into APK
+          # Inject classes.dex into APK using jar (more reliable than zip)
           APK=$(ls target/debug/apk/*.apk | head -1)
           cp "$APK" "$APK.tmp"
-          (cd target/java_classes && zip -q "../../$APK.tmp" classes.dex) || { echo "zip FAILED"; exit 1; }
+          cd target/java_classes && jar uf "../../$APK.tmp" classes.dex && cd ../.. || { echo "jar FAILED"; exit 1; }
           mv "$APK.tmp" "$APK"
+          echo "DEX injected: $(unzip -l $APK | grep classes.dex)"
           # Re-sign after modification
           $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks debug.keystore \
             --ks-pass pass:android --key-pass pass:android "$APK" \
