@@ -50,10 +50,10 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         .unwrap();
     let w = window.l().unwrap();
 
-    // Create LayoutParams(MATCH_PARENT, MATCH_PARENT, 0, 0)
+    // Create LayoutParams(MATCH_PARENT, MATCH_PARENT)
     let layout_params = env
         .new_object(
-            "android/view/ViewGroup\\$LayoutParams",
+            "android/view/ViewGroup$LayoutParams",
             "(II)V",
             &[JValue::Int(-1), JValue::Int(-1)], // MATCH_PARENT
         )
@@ -62,7 +62,7 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
     env.call_method(
         w,
         "addContentView",
-        "(Landroid/view/View;Landroid/view/ViewGroup\\$LayoutParams;)V",
+        "(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V",
         &[JValue::Object(&webview), JValue::Object(&layout_params)],
     )
     .expect("addContentView");
