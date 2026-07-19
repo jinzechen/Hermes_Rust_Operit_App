@@ -68,8 +68,13 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
     .expect("addContentView");
 
     // Hide the NativeActivity's black SurfaceView
+    // Re-get window (w was consumed by addContentView)
+    let window2 = env
+        .call_method(activity, "getWindow", "()Landroid/view/Window;", &[])
+        .unwrap();
+    let w2 = window2.l().unwrap();
     let decor = env
-        .call_method(&w, "getDecorView", "()Landroid/view/View;", &[])
+        .call_method(w2, "getDecorView", "()Landroid/view/View;", &[])
         .unwrap();
     let d = decor.l().unwrap();
     let child_count = env.call_method(&d, "getChildCount", "()I", &[]).unwrap();
