@@ -135,27 +135,16 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         WEBVIEW_REF = Some(global);
     }
 
-    // ── 7. Replace content view with WebView ──
-    let content_obj = content.l().unwrap();
-    if content_obj.is_null() {
-        // Fallback: set WebView directly as activity content
-        let _ = env.call_method(
-            activity,
-            "setContentView",
-            "(Landroid/view/View;)V",
-            &[JValue::Object(&webview)],
-        );
-        log::info!("[WebView] setContentView directly");
-    } else {
-        // Add WebView to the content FrameLayout
-        let _ = env.call_method(
-            content_obj,
-            "addView",
-            "(Landroid/view/View;)V",
-            &[JValue::Object(&webview)],
-        );
-        log::info!("[WebView] Added to content FrameLayout");
-    }
+    // ── 7. Replace activity content with WebView ──
+    // NativeActivity has a SurfaceView that blocks our WebView.
+    // Use setContentView to replace it entirely.
+    let _ = env.call_method(
+        activity,
+        "setContentView",
+        "(Landroid/view/View;)V",
+        &[JValue::Object(&webview)],
+    );
+    log::info!("[WebView] setContentView replaced");
 
     // ── 8. Load HTML ──
     let html = get_chat_html();
