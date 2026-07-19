@@ -1,0 +1,6 @@
+*.md linguist-detectable=true
+ARCHITECTURE.md linguist-documentation
+IMPLEMENTATION_BLUEPRINT.md linguist-documentation
+SESSION_HANDOFF.md linguist-documentation
+Learning/** linguist-documentation
+HermesApp-Rust*.md linguist-documentation
