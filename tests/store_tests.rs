@@ -27,7 +27,13 @@ fn test_builtin_index_expected_names() -> Result<()> {
     let index = builtin_index();
     let names: Vec<&str> = index.plugins.iter().map(|p| p.name.as_str()).collect();
 
-    let expected = ["obscura", "agentic_vision", "filesystem", "typemill", "sherpa"];
+    let expected = [
+        "obscura",
+        "agentic_vision",
+        "filesystem",
+        "typemill",
+        "sherpa",
+    ];
     for expected_name in &expected {
         assert!(
             names.contains(expected_name),
@@ -44,10 +50,7 @@ fn test_builtin_index_plugins_have_fields() -> Result<()> {
     let index = builtin_index();
 
     for plugin in &index.plugins {
-        assert!(
-            !plugin.name.is_empty(),
-            "Plugin has empty name"
-        );
+        assert!(!plugin.name.is_empty(), "Plugin has empty name");
         assert!(
             !plugin.version.is_empty(),
             "Plugin '{}' has empty version",
@@ -149,7 +152,10 @@ fn test_store_manager_uninstall_nonexistent() -> Result<()> {
     // Uninstalling a plugin not in the state should still succeed
     // (it logs a warning but doesn't error out).
     let result = manager::uninstall_plugin("nonexistent_plugin_xyz_12345");
-    assert!(result.is_ok(), "uninstall_plugin should succeed for unknown plugin");
+    assert!(
+        result.is_ok(),
+        "uninstall_plugin should succeed for unknown plugin"
+    );
 
     Ok(())
 }
@@ -329,7 +335,13 @@ fn test_store_integration_end_to_end() -> Result<()> {
     assert_eq!(index.plugins.len(), 5);
 
     // find_plugin for all builtins should succeed.
-    for plugin_name in &["obscura", "agentic_vision", "filesystem", "typemill", "sherpa"] {
+    for plugin_name in &[
+        "obscura",
+        "agentic_vision",
+        "filesystem",
+        "typemill",
+        "sherpa",
+    ] {
         let found = find_plugin(plugin_name);
         assert!(
             found.is_some(),

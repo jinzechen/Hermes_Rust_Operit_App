@@ -124,8 +124,7 @@ impl StoreBrowser {
         self.cached_listings
             .iter()
             .filter(|p| {
-                p.name.to_lowercase().contains(&q)
-                    || p.description.to_lowercase().contains(&q)
+                p.name.to_lowercase().contains(&q) || p.description.to_lowercase().contains(&q)
             })
             .collect()
     }

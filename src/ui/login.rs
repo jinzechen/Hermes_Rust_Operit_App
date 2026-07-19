@@ -42,9 +42,7 @@ impl GitHubOAuth {
             .expect("Invalid GitHub token URL");
 
         let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
-            .set_redirect_uri(
-                RedirectUrl::new(redirect_url.into()).expect("Invalid redirect URL"),
-            );
+            .set_redirect_uri(RedirectUrl::new(redirect_url.into()).expect("Invalid redirect URL"));
 
         Self { client }
     }

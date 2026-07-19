@@ -11,7 +11,7 @@ pub use agent::{AgentManager, AgentResponse, AgentStatus};
 pub use config::AppConfig;
 pub use memory::{MemoryEntry, MemoryStore, Message};
 pub use provider::{
-    AnthropicProvider, GenericProvider, LlmProvider, LlmResponse, OpenAiProvider,
-    RouteDecision, SmartModelRouter, TaskType, TokenUsage, ToolCall,
+    AnthropicProvider, GenericProvider, LlmProvider, LlmResponse, OpenAiProvider, RouteDecision,
+    SmartModelRouter, TaskType, TokenUsage, ToolCall,
 };
 pub use tool_registry::{ToolHandler, ToolRegistry, ToolSchema};

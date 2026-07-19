@@ -316,18 +316,13 @@ impl FileSystemTool {
     fn op_read_json(&self, args: &serde_json::Value) -> Result<String> {
         let path_str = get_string_arg(args, "path")?;
         let p = self.resolve(&path_str)?;
-        let file = fs::File::open(&p)
-            .with_context(|| format!("cannot open {}", p.display()))?;
+        let file = fs::File::open(&p).with_context(|| format!("cannot open {}", p.display()))?;
         let reader = BufReader::new(file);
         let value: serde_json::Value = serde_json::from_reader(reader)
             .with_context(|| format!("invalid JSON in {}", p.display()))?;
 
         let pretty = serde_json::to_string_pretty(&value)?;
-        Ok(format!(
-            "## {}\n\n```json\n{}\n```",
-            p.display(),
-            pretty
-        ))
+        Ok(format!("## {}\n\n```json\n{}\n```", p.display(), pretty))
     }
 
     fn op_write_json(&self, args: &serde_json::Value) -> Result<String> {
@@ -335,8 +330,8 @@ impl FileSystemTool {
         let content_str = get_string_arg(args, "content")?;
 
         // Parse to validate it's real JSON.
-        let value: serde_json::Value = serde_json::from_str(&content_str)
-            .with_context(|| "content is not valid JSON")?;
+        let value: serde_json::Value =
+            serde_json::from_str(&content_str).with_context(|| "content is not valid JSON")?;
 
         let p = self.resolve_for_write(&path_str)?;
         if let Some(parent) = p.parent() {
@@ -438,10 +433,7 @@ impl FileSystemTool {
             .get("prefix")
             .and_then(|v| v.as_str())
             .unwrap_or("hermes_");
-        let content = args
-            .get("content")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
 
         let base = std::env::temp_dir();
         let file_path = base.join(format!("{}{}", prefix, uuid::Uuid::new_v4()));
@@ -483,8 +475,8 @@ impl FileSystemTool {
             }
         };
 
-        let input = fs::read(&src)
-            .with_context(|| format!("cannot read source: {}", src.display()))?;
+        let input =
+            fs::read(&src).with_context(|| format!("cannot read source: {}", src.display()))?;
 
         let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
         encoder
@@ -533,8 +525,8 @@ impl FileSystemTool {
             }
         };
 
-        let compressed = fs::read(&src)
-            .with_context(|| format!("cannot read source: {}", src.display()))?;
+        let compressed =
+            fs::read(&src).with_context(|| format!("cannot read source: {}", src.display()))?;
 
         let mut decoder = GzDecoder::new(&compressed[..]);
         let mut decompressed = Vec::new();
@@ -561,8 +553,7 @@ impl FileSystemTool {
         let path_str = get_string_arg(args, "path")?;
         let p = self.resolve(&path_str)?;
 
-        let file = fs::File::open(&p)
-            .with_context(|| format!("cannot open {}", p.display()))?;
+        let file = fs::File::open(&p).with_context(|| format!("cannot open {}", p.display()))?;
         let reader = BufReader::new(file);
         let count = reader.lines().count();
 
@@ -577,8 +568,8 @@ impl FileSystemTool {
         let path_str = get_string_arg(args, "path")?;
         let p = self.resolve(&path_str)?;
 
-        let mut file = fs::File::open(&p)
-            .with_context(|| format!("cannot open {}", p.display()))?;
+        let mut file =
+            fs::File::open(&p).with_context(|| format!("cannot open {}", p.display()))?;
         let mut hasher = Sha256::new();
         let mut buffer = [0u8; 8192];
         loop {
@@ -590,11 +581,7 @@ impl FileSystemTool {
         }
         let digest = hasher.finalize();
 
-        Ok(format!(
-            "## SHA-256\n\n`{}`\n\n{:x}",
-            p.display(),
-            digest
-        ))
+        Ok(format!("## SHA-256\n\n`{}`\n\n{:x}", p.display(), digest))
     }
 
     fn op_batch_read(&self, args: &serde_json::Value) -> Result<String> {
@@ -638,7 +625,9 @@ impl FileSystemTool {
         let files = args
             .get("files")
             .and_then(|v| v.as_array())
-            .ok_or_else(|| anyhow::anyhow!("'files' must be a JSON array of {{path, content}} objects"))?;
+            .ok_or_else(|| {
+                anyhow::anyhow!("'files' must be a JSON array of {{path, content}} objects")
+            })?;
 
         let mut out = String::from("## Batch Write\n\n");
         let mut total_bytes = 0usize;

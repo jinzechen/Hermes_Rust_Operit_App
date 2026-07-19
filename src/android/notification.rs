@@ -18,7 +18,10 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeNotificationS
     message: JString<'local>,
 ) -> jboolean {
     let t: String = env.get_string(&title).map(|s| s.into()).unwrap_or_default();
-    let m: String = env.get_string(&message).map(|s| s.into()).unwrap_or_default();
+    let m: String = env
+        .get_string(&message)
+        .map(|s| s.into())
+        .unwrap_or_default();
     log::info!("[Notification] Show title=\"{t}\" msg=\"{m}\" (placeholder)");
     jni::sys::JNI_TRUE
 }

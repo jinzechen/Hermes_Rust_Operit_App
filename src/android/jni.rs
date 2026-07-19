@@ -27,12 +27,10 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeInit<'local>(
             log::error!("[JNI] Failed to create global ref for sendMessage callback: {e}");
             panic!("JNI global ref error");
         });
-    let _tools_cb = env
-        .new_global_ref(tool_names_callback)
-        .unwrap_or_else(|e| {
-            log::error!("[JNI] Failed to create global ref for toolNames callback: {e}");
-            panic!("JNI global ref error");
-        });
+    let _tools_cb = env.new_global_ref(tool_names_callback).unwrap_or_else(|e| {
+        log::error!("[JNI] Failed to create global ref for toolNames callback: {e}");
+        panic!("JNI global ref error");
+    });
 
     // Placeholder: In a real build this would instantiate the Agent struct
     // and stash the callbacks inside it. Return a dummy non-null pointer.

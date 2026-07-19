@@ -17,7 +17,10 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeShizukuExec<'
     _class: JClass<'local>,
     command: JString<'local>,
 ) -> jstring {
-    let cmd: String = env.get_string(&command).map(|s| s.into()).unwrap_or_default();
+    let cmd: String = env
+        .get_string(&command)
+        .map(|s| s.into())
+        .unwrap_or_default();
     log::info!("[Shizuku] Exec: \"{cmd}\"");
 
     let output = format!("[placeholder] exec result for: {cmd}");

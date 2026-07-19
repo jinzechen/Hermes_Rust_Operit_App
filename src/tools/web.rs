@@ -124,9 +124,7 @@ impl WebTool {
             .send()
             .with_context(|| format!("DuckDuckGo search request failed for: {}", query))?;
 
-        let body = resp
-            .text()
-            .context("failed to read search response body")?;
+        let body = resp.text().context("failed to read search response body")?;
 
         let document = Html::parse_document(&body);
 
@@ -237,9 +235,7 @@ impl WebTool {
             .unwrap_or("unknown")
             .to_string();
 
-        let body = resp
-            .text()
-            .context("failed to read response body")?;
+        let body = resp.text().context("failed to read response body")?;
 
         let is_html = content_type.contains("html");
 
@@ -270,11 +266,7 @@ impl WebTool {
             };
 
             let truncated: String = body_text.chars().take(8000).collect();
-            let suffix = if body_text.len() > 8000 {
-                "…"
-            } else {
-                ""
-            };
+            let suffix = if body_text.len() > 8000 { "…" } else { "" };
 
             (format!("{}{}", truncated, suffix), title)
         } else {

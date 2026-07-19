@@ -12,5 +12,5 @@ pub mod ui;
 pub mod android;
 
 // Re-exports
-pub use core::config::AppConfig;
 pub use core::agent::AgentManager;
+pub use core::config::AppConfig;

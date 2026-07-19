@@ -100,10 +100,9 @@ impl AgentManager {
 
         // Register all default tools.  WebTool::new() can fail, so we handle
         // that gracefully — if one tool fails we still register the others.
-        agent.register_tool(Box::new(
-            crate::tools::FileSystemTool::new(vec![std::env::current_dir()
-                .unwrap_or_else(|_| std::path::PathBuf::from("."))]),
-        ));
+        agent.register_tool(Box::new(crate::tools::FileSystemTool::new(vec![
+            std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")),
+        ])));
         agent.register_tool(Box::new(crate::tools::MarkdownTool::new()));
         match crate::tools::WebTool::new() {
             Ok(wt) => agent.register_tool(Box::new(wt)),
@@ -405,20 +404,14 @@ impl AgentManager {
 
     /// List the IDs of all currently active sessions.
     pub fn list_sessions(&self) -> Vec<String> {
-        let sessions = self
-            .sessions
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         sessions.keys().cloned().collect()
     }
 
     /// Return a clone of the full message history for a session.
     /// Returns an empty Vec if the session does not exist.
     pub fn get_session_history(&self, session_id: &str) -> Vec<Message> {
-        let sessions = self
-            .sessions
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
+        let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         sessions.get(session_id).cloned().unwrap_or_default()
     }
 
@@ -426,17 +419,11 @@ impl AgentManager {
     /// session doesn't exist.
     pub fn clear_session(&self, session_id: &str) {
         {
-            let mut sessions = self
-                .sessions
-                .lock()
-                .unwrap_or_else(|e| e.into_inner());
+            let mut sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
             sessions.remove(session_id);
         }
         {
-            let mut meta = self
-                .session_meta
-                .lock()
-                .unwrap_or_else(|e| e.into_inner());
+            let mut meta = self.session_meta.lock().unwrap_or_else(|e| e.into_inner());
             meta.remove(session_id);
         }
     }
@@ -471,10 +458,7 @@ impl AgentManager {
         );
 
         if session_count > 0 {
-            summary.push_str(&format!(
-                "Session IDs:        {}\n",
-                sessions.join(", ")
-            ));
+            summary.push_str(&format!("Session IDs:        {}\n", sessions.join(", ")));
         }
 
         summary.push_str(&format!(
@@ -526,12 +510,11 @@ impl AgentManager {
     pub fn health_check(&self) -> AgentStatus {
         // Best-effort connectivity check to the provider endpoint.
         let provider_ok = self.runtime.block_on(async {
-            let base_url =
-                if let Some(pos) = self.config.api_endpoint.rfind("/v") {
-                    &self.config.api_endpoint[..pos]
-                } else {
-                    &self.config.api_endpoint
-                };
+            let base_url = if let Some(pos) = self.config.api_endpoint.rfind("/v") {
+                &self.config.api_endpoint[..pos]
+            } else {
+                &self.config.api_endpoint
+            };
             match reqwest::Client::builder()
                 .timeout(Duration::from_secs(5))
                 .build()
@@ -675,7 +658,9 @@ mod tests {
         assert_eq!(agent.config().max_tokens, 8192);
 
         // Change api_endpoint.
-        agent.set_config("api_endpoint", "https://api.anthropic.com/v1/messages").unwrap();
+        agent
+            .set_config("api_endpoint", "https://api.anthropic.com/v1/messages")
+            .unwrap();
         assert_eq!(
             agent.config().api_endpoint,
             "https://api.anthropic.com/v1/messages"

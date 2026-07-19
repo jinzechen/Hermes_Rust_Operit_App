@@ -28,8 +28,8 @@ impl ToolHandler for TerminalTool {
     fn schema(&self) -> ToolSchema {
         ToolSchema {
             name: "terminal".into(),
-            description:
-                "Execute shell commands with 30-second timeout and 1 MB output limit".into(),
+            description: "Execute shell commands with 30-second timeout and 1 MB output limit"
+                .into(),
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -53,9 +53,7 @@ impl ToolHandler for TerminalTool {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow::anyhow!("missing 'command' argument"))?;
 
-        let workdir = arguments
-            .get("workdir")
-            .and_then(|v| v.as_str());
+        let workdir = arguments.get("workdir").and_then(|v| v.as_str());
 
         // Detect OS to choose the right shell.
         let (shell, shell_arg) = if cfg!(target_os = "windows") {
@@ -121,20 +119,13 @@ impl ToolHandler for TerminalTool {
         }
 
         // Truncate output to max_output.
-        let stdout_str = String::from_utf8_lossy(
-            &stdout_buf[..stdout_buf.len().min(max_output)],
-        );
-        let stderr_str = String::from_utf8_lossy(
-            &stderr_buf[..stderr_buf.len().min(max_output)],
-        );
+        let stdout_str = String::from_utf8_lossy(&stdout_buf[..stdout_buf.len().min(max_output)]);
+        let stderr_str = String::from_utf8_lossy(&stderr_buf[..stderr_buf.len().min(max_output)]);
 
         let total_out = stdout_buf.len() + stderr_buf.len();
         let truncated = total_out > max_output;
 
-        let mut out = format!(
-            "## Terminal\n\n```\n{}\n```\n\n",
-            cmd_str
-        );
+        let mut out = format!("## Terminal\n\n```\n{}\n```\n\n", cmd_str);
 
         if !stdout_str.is_empty() {
             out.push_str(&format!(

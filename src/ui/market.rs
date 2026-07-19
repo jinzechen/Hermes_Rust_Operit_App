@@ -1,5 +1,5 @@
-use dioxus::prelude::*;
 use crate::ui::components::PluginCard;
+use dioxus::prelude::*;
 
 /// Sub-tabs within the Market page.
 #[derive(Debug, Clone, PartialEq)]

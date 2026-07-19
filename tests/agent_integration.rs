@@ -162,10 +162,8 @@ fn test_tool_registry() -> Result<()> {
     assert!(registry.get("nonexistent").is_none());
 
     // Execute the tool.
-    let result = registry.execute_tool(
-        "echo",
-        serde_json::json!({"text": "hello from registry"}),
-    )?;
+    let result =
+        registry.execute_tool("echo", serde_json::json!({"text": "hello from registry"}))?;
     assert_eq!(result, "hello from registry");
 
     // Execute a missing tool.
@@ -434,11 +432,19 @@ fn test_direct_tool_execution() -> Result<()> {
     for (name, tool) in &tools {
         let schema = tool.schema();
         assert_eq!(schema.name, *name, "Tool schema name mismatch for {}", name);
-        assert!(!schema.description.is_empty(), "Tool {} has empty description", name);
+        assert!(
+            !schema.description.is_empty(),
+            "Tool {} has empty description",
+            name
+        );
 
         // parameters should be a valid JSON object with "type" field.
         let params = &schema.parameters;
-        assert!(params.is_object(), "Tool {} parameters is not an object", name);
+        assert!(
+            params.is_object(),
+            "Tool {} parameters is not an object",
+            name
+        );
         assert!(
             params.get("type").is_some(),
             "Tool {} parameters missing 'type'",

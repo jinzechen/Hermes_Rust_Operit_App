@@ -54,8 +54,8 @@ impl ToolHandler for CodebaseAnalyzer {
                 Ok(md)
             }
             _ => {
-                let json_str = serde_json::to_string_pretty(&graph)
-                    .unwrap_or_else(|_| "{}".to_string());
+                let json_str =
+                    serde_json::to_string_pretty(&graph).unwrap_or_else(|_| "{}".to_string());
                 Ok(json_str)
             }
         }

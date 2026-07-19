@@ -39,7 +39,7 @@ jobs:
 
   android-apk:
     runs-on: ubuntu-latest
-    needs: test
+    
     steps:
       - uses: actions/checkout@v4
       - name: Clone UA Rust dependency

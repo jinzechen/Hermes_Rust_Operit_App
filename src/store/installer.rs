@@ -20,13 +20,11 @@ use super::index::{self, PluginIndex};
 /// cleaned up on the next reboot (written to the system temp dir).
 pub fn download_plugin(url: &str, dest: &Path) -> Result<PathBuf> {
     // If dest is a directory, append a filename derived from the URL
-    let dest_path: PathBuf = if dest.is_dir() || dest.to_string_lossy().ends_with('/')
+    let dest_path: PathBuf = if dest.is_dir()
+        || dest.to_string_lossy().ends_with('/')
         || dest.to_string_lossy().ends_with('\\')
     {
-        let filename = url
-            .rsplit('/')
-            .next()
-            .unwrap_or("plugin.zip");
+        let filename = url.rsplit('/').next().unwrap_or("plugin.zip");
         dest.join(filename)
     } else {
         dest.to_path_buf()
@@ -44,10 +42,7 @@ pub fn download_plugin(url: &str, dest: &Path) -> Result<PathBuf> {
         .build()
         .context("failed to build HTTP client")?;
 
-    let response = client
-        .get(url)
-        .send()
-        .context("download request failed")?;
+    let response = client.get(url).send().context("download request failed")?;
 
     if !response.status().is_success() {
         bail!(
@@ -63,7 +58,11 @@ pub fn download_plugin(url: &str, dest: &Path) -> Result<PathBuf> {
         .with_context(|| format!("failed to create file {}", dest_path.display()))?;
     file.write_all(&bytes)?;
 
-    log::info!("downloaded {} bytes to {}", bytes.len(), dest_path.display());
+    log::info!(
+        "downloaded {} bytes to {}",
+        bytes.len(),
+        dest_path.display()
+    );
     Ok(dest_path)
 }
 
@@ -75,12 +74,15 @@ pub fn download_plugin(url: &str, dest: &Path) -> Result<PathBuf> {
 /// or `Err` if the file cannot be read.
 pub fn verify_checksum(path: &Path, expected_sha256: &str) -> Result<bool> {
     if expected_sha256.is_empty() {
-        log::warn!("empty expected checksum — skipping verification for {}", path.display());
+        log::warn!(
+            "empty expected checksum — skipping verification for {}",
+            path.display()
+        );
         return Ok(true);
     }
 
-    let mut file =
-        fs::File::open(path).with_context(|| format!("cannot open {} for checksum", path.display()))?;
+    let mut file = fs::File::open(path)
+        .with_context(|| format!("cannot open {} for checksum", path.display()))?;
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 8192];
 
@@ -199,10 +201,7 @@ pub fn install_plugin(plugin: &PluginIndex) -> Result<PathBuf> {
         let valid = verify_checksum(&zip_path, &plugin.sha256)?;
         if !valid {
             let _ = fs::remove_file(&zip_path);
-            bail!(
-                "checksum verification failed for plugin '{}'",
-                plugin.name
-            );
+            bail!("checksum verification failed for plugin '{}'", plugin.name);
         }
     }
 
@@ -224,10 +223,7 @@ pub fn install_plugin(plugin: &PluginIndex) -> Result<PathBuf> {
             // Don't blindly chmod all files; only typical script/binary extensions
             let path = entry.path();
             let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-            let name = path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
+            let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
             let should_chmod = ext.is_empty() // no extension = likely binary
                 || ext == "sh"

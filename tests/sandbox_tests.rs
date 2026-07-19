@@ -16,7 +16,11 @@ fn test_sandbox_echo() -> Result<()> {
     let result = sandbox.execute("echo hello_world");
 
     assert_eq!(result.exit_code, 0);
-    assert!(result.stdout.contains("hello_world"), "stdout: {}", result.stdout);
+    assert!(
+        result.stdout.contains("hello_world"),
+        "stdout: {}",
+        result.stdout
+    );
     assert!(!result.timed_out);
     assert!(!result.truncated);
 
@@ -55,11 +59,7 @@ fn test_sandbox_output_truncation() -> Result<()> {
     let cmd = "i=0; while [ $i -lt 200 ]; do echo $i; i=$((i+1)); done";
 
     let result = sandbox.execute(cmd);
-    assert!(
-        result.truncated,
-        "expected truncated but got: {:?}",
-        result
-    );
+    assert!(result.truncated, "expected truncated but got: {:?}", result);
     // stdout should be capped around 100 bytes (allow some margin).
     assert!(
         result.stdout.len() <= 300,
@@ -91,9 +91,7 @@ fn test_sandbox_path_whitelist_allow() -> Result<()> {
 
 #[test]
 fn test_sandbox_path_whitelist_deny() -> Result<()> {
-    let sandbox = Sandbox::builder()
-        .allow_path("/only/this/dir")
-        .build();
+    let sandbox = Sandbox::builder().allow_path("/only/this/dir").build();
 
     let result = sandbox.execute("cat /etc/hosts 2>/dev/null");
     assert!(
@@ -143,8 +141,16 @@ fn test_sandbox_stdin() -> Result<()> {
     let result = sandbox.execute_with_stdin("sort", "banana\napple\ncherry\n");
 
     assert!(result.stdout.contains("apple"), "stdout: {}", result.stdout);
-    assert!(result.stdout.contains("banana"), "stdout: {}", result.stdout);
-    assert!(result.stdout.contains("cherry"), "stdout: {}", result.stdout);
+    assert!(
+        result.stdout.contains("banana"),
+        "stdout: {}",
+        result.stdout
+    );
+    assert!(
+        result.stdout.contains("cherry"),
+        "stdout: {}",
+        result.stdout
+    );
     assert_eq!(result.exit_code, 0, "result: {:?}", result);
 
     Ok(())
@@ -176,7 +182,11 @@ fn test_sandbox_duration() -> Result<()> {
     let sandbox = Sandbox::builder().build();
     let result = sandbox.execute("echo instant");
 
-    assert!(result.duration > Duration::ZERO, "duration: {:?}", result.duration);
+    assert!(
+        result.duration > Duration::ZERO,
+        "duration: {:?}",
+        result.duration
+    );
     assert_eq!(result.exit_code, 0);
 
     Ok(())

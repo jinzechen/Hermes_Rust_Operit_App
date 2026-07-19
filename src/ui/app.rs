@@ -1,9 +1,9 @@
-use dioxus::prelude::*;
 use crate::ui::chat::ChatPage;
 use crate::ui::market::MarketPage;
-use crate::ui::toolbox::ToolboxPage;
 use crate::ui::memory_view::MemoryViewPage;
 use crate::ui::settings::SettingsPage;
+use crate::ui::toolbox::ToolboxPage;
+use dioxus::prelude::*;
 
 /// Top-level tabs in the application.
 #[derive(Debug, Clone, PartialEq)]

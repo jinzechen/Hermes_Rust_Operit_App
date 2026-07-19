@@ -25,8 +25,9 @@ impl ToolHandler for SpeechTool {
     fn schema(&self) -> ToolSchema {
         ToolSchema {
             name: "speech".into(),
-            description: "Speech-to-text and text-to-speech (placeholder — requires external model/API)"
-                .into(),
+            description:
+                "Speech-to-text and text-to-speech (placeholder — requires external model/API)"
+                    .into(),
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -91,10 +92,7 @@ fn speech_to_text_placeholder(args: &serde_json::Value) -> anyhow::Result<String
 }
 
 fn text_to_speech_placeholder(args: &serde_json::Value) -> anyhow::Result<String> {
-    let text = args
-        .get("text")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
+    let text = args.get("text").and_then(|v| v.as_str()).unwrap_or("");
     let path = args
         .get("path")
         .and_then(|v| v.as_str())
@@ -117,6 +115,10 @@ fn text_to_speech_placeholder(args: &serde_json::Value) -> anyhow::Result<String
          > - Cloud: Azure Speech, Google Cloud Text-to-Speech, ElevenLabs\n\
          >\n\
          > This is a placeholder.  Integrate one of the above for real speech synthesis.",
-        preview, suffix, text.len(), path, language
+        preview,
+        suffix,
+        text.len(),
+        path,
+        language
     ))
 }

@@ -59,12 +59,12 @@ static DENIED_PATTERNS: Lazy<Vec<(&str, Regex)>> = Lazy::new(|| {
         // curl piping to shell
         ("curl | sh", r"curl\s+.*\|\s*(?:sh|bash|zsh)"),
         // wget piping to shell
-        ("wget -O - | sh", r"wget\s+.*-O\s*-\s*.*\|\s*(?:sh|bash|zsh)"),
-        // echo into /proc/sys (kernel parameter tampering)
         (
-            "echo ... > /proc/sys/",
-            r"echo\s+.*>\s*/proc/sys/",
+            "wget -O - | sh",
+            r"wget\s+.*-O\s*-\s*.*\|\s*(?:sh|bash|zsh)",
         ),
+        // echo into /proc/sys (kernel parameter tampering)
+        ("echo ... > /proc/sys/", r"echo\s+.*>\s*/proc/sys/"),
         // mount --bind (can be used for privilege escalation)
         ("mount --bind", r"mount\s+--bind"),
     ];
@@ -95,15 +95,12 @@ static WARN_PATTERNS: Lazy<Vec<(&str, Regex)>> = Lazy::new(|| {
 // ── Shell-injection detection regex ──────────────────────────────────────────
 
 /// Matches common shell-injection / command-injection tokens.
-static SHELL_INJECTION_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\$\(|`|;|&&|\|\|").unwrap()
-});
+static SHELL_INJECTION_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\(|`|;|&&|\|\|").unwrap());
 
 // ── Path-traversal detection regex ───────────────────────────────────────────
 
 /// Matches `../` or `..\\` (Unix / Windows path traversal).
-static PATH_TRAVERSAL_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\.\./|\.\.\\").unwrap());
+static PATH_TRAVERSAL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\.\./|\.\.\\").unwrap());
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -336,40 +333,35 @@ mod tests {
 
     #[test]
     fn audit_block_dangerous() {
-        let params: Value =
-            serde_json::json!({"command": "rm -rf /"});
+        let params: Value = serde_json::json!({"command": "rm -rf /"});
         let result = audit_tool_call("terminal", &params);
         assert!(matches!(result, AuditResult::Block(_)));
     }
 
     #[test]
     fn audit_warn_rm_non_root() {
-        let params: Value =
-            serde_json::json!({"command": "rm important_file.txt"});
+        let params: Value = serde_json::json!({"command": "rm important_file.txt"});
         let result = audit_tool_call("filesystem", &params);
         assert!(matches!(result, AuditResult::Warn(_)));
     }
 
     #[test]
     fn audit_warn_sudo() {
-        let params: Value =
-            serde_json::json!({"command": "sudo systemctl restart nginx"});
+        let params: Value = serde_json::json!({"command": "sudo systemctl restart nginx"});
         let result = audit_tool_call("terminal", &params);
         assert!(matches!(result, AuditResult::Warn(_)));
     }
 
     #[test]
     fn audit_warn_pip_install() {
-        let params: Value =
-            serde_json::json!({"command": "pip install malicious-package"});
+        let params: Value = serde_json::json!({"command": "pip install malicious-package"});
         let result = audit_tool_call("terminal", &params);
         assert!(matches!(result, AuditResult::Warn(_)));
     }
 
     #[test]
     fn audit_safe_harmless() {
-        let params: Value =
-            serde_json::json!({"command": "ls -la"});
+        let params: Value = serde_json::json!({"command": "ls -la"});
         let result = audit_tool_call("terminal", &params);
         assert_eq!(result, AuditResult::Safe);
     }
@@ -386,8 +378,7 @@ mod tests {
     #[test]
     fn block_wins_over_warn() {
         // "rm -rf /" matches both rm (warn) and rm -rf / (block)
-        let params: Value =
-            serde_json::json!({"command": "rm -rf /"});
+        let params: Value = serde_json::json!({"command": "rm -rf /"});
         let result = audit_tool_call("terminal", &params);
         assert!(matches!(result, AuditResult::Block(_)));
     }

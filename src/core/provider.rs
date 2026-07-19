@@ -108,10 +108,7 @@ impl SmartModelRouter {
     }
 
     /// Create a router with custom cache sizes.
-    pub fn with_cache_sizes(
-        classification_max: u64,
-        routing_max: u64,
-    ) -> Self {
+    pub fn with_cache_sizes(classification_max: u64, routing_max: u64) -> Self {
         Self {
             classification_cache: Cache::builder()
                 .max_capacity(classification_max)
@@ -488,12 +485,8 @@ impl AnthropicProvider {
     fn parse_usage(resp_body: &Value) -> Option<TokenUsage> {
         let usage = resp_body.get("usage")?;
         Some(TokenUsage {
-            prompt_tokens: usage
-                .get("input_tokens")
-                .and_then(|v| v.as_u64())? as u32,
-            completion_tokens: usage
-                .get("output_tokens")
-                .and_then(|v| v.as_u64())? as u32,
+            prompt_tokens: usage.get("input_tokens").and_then(|v| v.as_u64())? as u32,
+            completion_tokens: usage.get("output_tokens").and_then(|v| v.as_u64())? as u32,
             total_tokens: 0, // Anthropic doesn't always give total; compute it
         })
     }

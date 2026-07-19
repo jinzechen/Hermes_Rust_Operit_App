@@ -36,7 +36,9 @@ impl Default for ProotConfig {
     fn default() -> Self {
         Self {
             proot_command: "proot".to_string(),
-            rootfs_path: PathBuf::from("/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu"),
+            rootfs_path: PathBuf::from(
+                "/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu",
+            ),
             extra_args: Vec::new(),
             default_workdir: PathBuf::from("/root"),
         }
@@ -93,13 +95,15 @@ impl ProotEnv {
 
         let candidate_rootfs_paths: Vec<PathBuf> = vec![
             // Typical Termux $PREFIX layout
-            PathBuf::from("/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu"),
+            PathBuf::from(
+                "/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu",
+            ),
         ];
 
         // Also check $PREFIX from environment
         if let Ok(prefix) = std::env::var("PREFIX") {
-            let env_rootfs = PathBuf::from(&prefix)
-                .join("var/lib/proot-distro/installed-rootfs/ubuntu");
+            let env_rootfs =
+                PathBuf::from(&prefix).join("var/lib/proot-distro/installed-rootfs/ubuntu");
             if !candidate_rootfs_paths.contains(&env_rootfs) {
                 // push front so env var takes priority
                 // candidate_rootfs_paths.insert(0, env_rootfs);
@@ -115,10 +119,7 @@ impl ProotEnv {
 
     fn try_paths(rootfs_paths: &[PathBuf]) -> Option<Self> {
         // Probe common proot binary locations.
-        let proot_candidates = &[
-            "proot",
-            "/data/data/com.termux/files/usr/bin/proot",
-        ];
+        let proot_candidates = &["proot", "/data/data/com.termux/files/usr/bin/proot"];
 
         for rootfs in rootfs_paths {
             if !rootfs.join("etc").exists() || !rootfs.join("bin").exists() {
@@ -233,7 +234,9 @@ impl ProotEnv {
             cmd.args(&parts[1..]);
         }
 
-        let output = cmd.output().context("failed to execute command via proot")?;
+        let output = cmd
+            .output()
+            .context("failed to execute command via proot")?;
 
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         if !output.status.success() {

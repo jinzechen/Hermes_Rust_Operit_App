@@ -318,8 +318,8 @@ impl Sandbox {
         };
 
         // --- assemble result --------------------------------------------------
-        let truncated = stdout_truncated.load(Ordering::Relaxed)
-            || stderr_truncated.load(Ordering::Relaxed);
+        let truncated =
+            stdout_truncated.load(Ordering::Relaxed) || stderr_truncated.load(Ordering::Relaxed);
 
         let stdout = String::from_utf8_lossy(&stdout_buf.lock().unwrap()).to_string();
         let stderr = String::from_utf8_lossy(&stderr_buf.lock().unwrap()).to_string();
@@ -358,10 +358,7 @@ impl Sandbox {
             let check = normalize_path_for_check(Path::new(token));
             if !self.is_path_allowed(&check) {
                 return Err(SandboxResult {
-                    stderr: format!(
-                        "sandbox: access denied for path: {}",
-                        token
-                    ),
+                    stderr: format!("sandbox: access denied for path: {}", token),
                     exit_code: -1,
                     ..Default::default()
                 });
@@ -594,9 +591,7 @@ mod tests {
     // ------------------------------------------------------------------
     #[test]
     fn test_path_whitelist_deny() {
-        let sandbox = Sandbox::builder()
-            .allow_path("/only/this/dir")
-            .build();
+        let sandbox = Sandbox::builder().allow_path("/only/this/dir").build();
 
         let result = sandbox.execute("cat /etc/hosts 2>/dev/null");
         assert!(
@@ -620,7 +615,11 @@ mod tests {
         let cmd = "echo error_message >&2";
 
         let result = sandbox.execute(cmd);
-        assert!(result.stderr.contains("error_message"), "result: {:?}", result);
+        assert!(
+            result.stderr.contains("error_message"),
+            "result: {:?}",
+            result
+        );
         assert!(result.stdout.is_empty() || !result.stdout.contains("error_message"));
     }
 

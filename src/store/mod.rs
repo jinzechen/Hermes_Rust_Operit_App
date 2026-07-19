@@ -18,9 +18,15 @@ use anyhow::{anyhow, bail, Context, Result};
 use serde::{Deserialize, Serialize};
 
 // Re-export the store module types for convenient access.
-pub use index::{builtin_index, fetch_index, find_plugin, load_cache, load_cached_or_builtin, save_cache, PluginIndex, StoreIndex};
+pub use index::{
+    builtin_index, fetch_index, find_plugin, load_cache, load_cached_or_builtin, save_cache,
+    PluginIndex, StoreIndex,
+};
 pub use installer::{download_plugin, extract_zip, install_plugin, verify_checksum};
-pub use manager::{check_update, disable_plugin, enable_plugin, install, list_installed, uninstall_plugin, upgrade_plugin, PluginState};
+pub use manager::{
+    check_update, disable_plugin, enable_plugin, install, list_installed, uninstall_plugin,
+    upgrade_plugin, PluginState,
+};
 
 // ── domain types ───────────────────────────────────────────────────
 

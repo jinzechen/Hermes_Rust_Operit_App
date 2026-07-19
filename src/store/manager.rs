@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 
-use super::index::{self, find_plugin, fetch_index};
+use super::index::{self, fetch_index, find_plugin};
 use super::installer::install_plugin;
 
 // ── state types ────────────────────────────────────────────────────
@@ -102,11 +102,7 @@ pub fn list_installed() -> Result<Vec<PluginState>> {
             String::from("unknown")
         };
 
-        let enabled = state
-            .plugins
-            .get(&name)
-            .map(|s| s.enabled)
-            .unwrap_or(true);
+        let enabled = state.plugins.get(&name).map(|s| s.enabled).unwrap_or(true);
 
         let ps = PluginState {
             name,
@@ -163,7 +159,11 @@ pub fn install(name: &str) -> Result<PluginState> {
     // Check if already installed
     let dir = plugin_dir(name)?;
     if dir.exists() {
-        bail!("plugin '{}' is already installed at {}", name, dir.display());
+        bail!(
+            "plugin '{}' is already installed at {}",
+            name,
+            dir.display()
+        );
     }
 
     let plugin = find_plugin(name)
@@ -261,7 +261,10 @@ pub fn check_update(name: &str) -> Result<Option<String>> {
         .ok_or_else(|| anyhow::anyhow!("plugin '{}' is not installed", name))?;
 
     if !installed.installed {
-        bail!("plugin '{}' is not installed; cannot check for updates", name);
+        bail!(
+            "plugin '{}' is not installed; cannot check for updates",
+            name
+        );
     }
 
     // Build the repo name from the plugin name using the standard convention

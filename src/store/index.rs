@@ -174,7 +174,10 @@ pub fn fetch_index(repo: &str) -> Result<StoreIndex> {
     let response = match client.get(&url).send() {
         Ok(r) => r,
         Err(e) => {
-            log::warn!("GitHub API unreachable ({}), falling back to cache/builtin", e);
+            log::warn!(
+                "GitHub API unreachable ({}), falling back to cache/builtin",
+                e
+            );
             return load_cached_or_builtin();
         }
     };
@@ -245,9 +248,7 @@ pub fn fetch_index(repo: &str) -> Result<StoreIndex> {
 /// Parse `owner/repo` out of various inputs.
 fn parse_github_repo(input: &str) -> Result<(&str, &str)> {
     // Strip https://github.com/ prefix if present
-    let s = input
-        .strip_prefix("https://github.com/")
-        .unwrap_or(input);
+    let s = input.strip_prefix("https://github.com/").unwrap_or(input);
     let s = s.strip_prefix("http://github.com/").unwrap_or(s);
     // Strip trailing slash
     let s = s.strip_suffix('/').unwrap_or(s);

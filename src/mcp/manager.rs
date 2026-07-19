@@ -8,9 +8,9 @@
 //! mcp_proxy, m3ux, rust_docs_mcp) while the 5 built-in tools use
 //! zero-overhead ToolHandler dispatch.
 
-use std::collections::HashMap;
-use serde_json::Value;
 use crate::mcp::client::McpClient;
+use serde_json::Value;
+use std::collections::HashMap;
 
 /// A managed MCP server connection.
 pub struct McpConnection {
@@ -57,7 +57,10 @@ impl McpManager {
                 let cargs: Vec<String> = conn.args.clone();
                 (cmd, cargs)
             };
-            let mut client = McpClient::new(cmd.as_str(), &cargs.iter().map(|s| s.as_str()).collect::<Vec<_>>())?;
+            let mut client = McpClient::new(
+                cmd.as_str(),
+                &cargs.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
+            )?;
             let _init = client.initialize().await?;
             let tools = client.list_tools().await?;
             if let Some(conn) = self.connections.get_mut(&name) {
@@ -130,5 +133,7 @@ impl McpManager {
 }
 
 impl Default for McpManager {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }

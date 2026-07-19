@@ -280,8 +280,7 @@ impl MemoryStore {
     /// the tantivy index (for full-text search).
     pub fn store(&self, entry: &MemoryEntry) -> Result<()> {
         // 1. Persist to redb
-        let serialized =
-            serde_json::to_vec(entry).context("Failed to serialize memory entry")?;
+        let serialized = serde_json::to_vec(entry).context("Failed to serialize memory entry")?;
 
         let write_txn = self
             .db
@@ -325,9 +324,7 @@ impl MemoryStore {
             writer
                 .add_document(tantivy_doc)
                 .context("Failed to add document to tantivy index")?;
-            writer
-                .commit()
-                .context("Failed to commit tantivy index")?;
+            writer.commit().context("Failed to commit tantivy index")?;
         }
 
         // Refresh the reader so it sees the new document.
@@ -371,9 +368,7 @@ impl MemoryStore {
         // Refresh reader to pick up any uncommitted documents.
         self.tantivy_reader.reload().ok();
 
-        let searcher = self
-            .tantivy_reader
-            .searcher();
+        let searcher = self.tantivy_reader.searcher();
 
         let schema = self.tantivy_index.schema();
         let content_field = schema.get_field("content").unwrap();
@@ -391,15 +386,14 @@ impl MemoryStore {
         let mut results: Vec<MemoryEntry> = Vec::with_capacity(top_docs.len());
 
         // Helper: extract a stored text field from a tantivy doc.
-        fn get_stored_text(
-            schema: &Schema,
-            doc: &TantivyDocument,
-            field_name: &str,
-        ) -> String {
+        fn get_stored_text(schema: &Schema, doc: &TantivyDocument, field_name: &str) -> String {
             schema
                 .get_field(field_name)
                 .ok()
-                .and_then(|f| doc.get_first(f).and_then(|v| v.as_str().map(|s| s.to_string())))
+                .and_then(|f| {
+                    doc.get_first(f)
+                        .and_then(|v| v.as_str().map(|s| s.to_string()))
+                })
                 .unwrap_or_default()
         }
 

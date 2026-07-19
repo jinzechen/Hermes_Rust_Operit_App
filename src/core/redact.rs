@@ -109,34 +109,29 @@ static SECRET_REDACT_RE: Lazy<Regex> = Lazy::new(|| {
 });
 
 /// `KEY=VALUE` pattern where the VALUE looks like base-64 / hex  (≥ 20 chars).
-static KEY_VALUE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)\b([A-Za-z0-9_]+)\s*=\s*([A-Za-z0-9+/=]{20,})").unwrap()
-});
+static KEY_VALUE_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)\b([A-Za-z0-9_]+)\s*=\s*([A-Za-z0-9+/=]{20,})").unwrap());
 
 // ── PII detection ────────────────────────────────────────────────────────────
 
 /// Email address.
-static EMAIL_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}").unwrap()
-});
+static EMAIL_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}").unwrap());
 
 /// Chinese mobile phone number (1xx-xxxx-xxxx).
-static PHONE_CN_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\b1[3-9]\d{9}\b").unwrap());
+static PHONE_CN_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b1[3-9]\d{9}\b").unwrap());
 
 /// International phone number (loose E.164-ish).
-static PHONE_INTL_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"\+\d{1,3}[-\s]?\d{4,14}").unwrap());
+static PHONE_INTL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\+\d{1,3}[-\s]?\d{4,14}").unwrap());
 
 /// Chinese 18-digit resident ID number.
 static ID_CARD_CN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\b[1-9]\d{5}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b").unwrap()
+    Regex::new(r"\b[1-9]\d{5}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b")
+        .unwrap()
 });
 
 /// Credit-card number (13-19 digits, optional spaces/dashes).
-static CREDIT_CARD_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"\b(?:\d[ -]*?){13,19}\b").unwrap()
-});
+static CREDIT_CARD_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\b(?:\d[ -]*?){13,19}\b").unwrap());
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -293,7 +288,11 @@ mod tests {
         let input = "ANTHROPIC_API_KEY=sk-ant-api03-abcdefghijklmnopqrstuvwxyz123456";
         let output = redact_secrets(input);
         assert!(output.contains("ANTHROPIC_API_KEY"));
-        assert!(output.contains("****"), "expected redaction, got: {}", output);
+        assert!(
+            output.contains("****"),
+            "expected redaction, got: {}",
+            output
+        );
     }
 
     #[test]
@@ -389,8 +388,7 @@ mod tests {
 
     #[test]
     fn redact_multiple_items() {
-        let input =
-            "Alice <alice@example.com> phone 13912345678 and credit 5500-0000-0000-0004";
+        let input = "Alice <alice@example.com> phone 13912345678 and credit 5500-0000-0000-0004";
         let output = redact_pii(input);
         assert!(!output.contains("alice@example.com"));
         assert!(!output.contains("13912345678"));

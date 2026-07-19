@@ -57,10 +57,7 @@ impl ToolHandler for VisionTool {
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
-        let path_str = arguments
-            .get("path")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let path_str = arguments.get("path").and_then(|v| v.as_str()).unwrap_or("");
 
         let prompt = arguments
             .get("prompt")
@@ -91,23 +88,17 @@ struct ImageInfo {
 /// common formats (PNG, JPEG, GIF, BMP).
 fn read_image_info(path_str: &str) -> anyhow::Result<ImageInfo> {
     let p = Path::new(path_str);
-    let meta = fs::metadata(p)
-        .with_context(|| format!("cannot access file: {}", path_str))?;
+    let meta = fs::metadata(p).with_context(|| format!("cannot access file: {}", path_str))?;
     let file_size = meta.len();
 
     if file_size < 8 {
         bail!("file too small to be a valid image ({} bytes)", file_size);
     }
 
-    let data = fs::read(p)
-        .with_context(|| format!("cannot read file: {}", path_str))?;
+    let data = fs::read(p).with_context(|| format!("cannot read file: {}", path_str))?;
 
     // ── PNG ────────────────────────────────────────────────
-    if data.len() >= 24
-        && data[0] == 0x89
-        && data[1] == b'P'
-        && data[2] == b'N'
-        && data[3] == b'G'
+    if data.len() >= 24 && data[0] == 0x89 && data[1] == b'P' && data[2] == b'N' && data[3] == b'G'
     {
         // PNG: width at offset 16 (4 bytes big-endian), height at offset 20
         let w = u32::from_be_bytes([data[16], data[17], data[18], data[19]]);
@@ -136,8 +127,12 @@ fn read_image_info(path_str: &str) -> anyhow::Result<ImageInfo> {
 
     // ── GIF ────────────────────────────────────────────────
     if data.len() >= 10
-        && (data[0] == b'G' && data[1] == b'I' && data[2] == b'F' && data[3] == b'8'
-            && (data[4] == b'7' || data[4] == b'9') && data[5] == b'a')
+        && (data[0] == b'G'
+            && data[1] == b'I'
+            && data[2] == b'F'
+            && data[3] == b'8'
+            && (data[4] == b'7' || data[4] == b'9')
+            && data[5] == b'a')
     {
         let w = u16::from_le_bytes([data[6], data[7]]) as u32;
         let h = u16::from_le_bytes([data[8], data[9]]) as u32;
@@ -165,8 +160,14 @@ fn read_image_info(path_str: &str) -> anyhow::Result<ImageInfo> {
 
     // ── WebP ───────────────────────────────────────────────
     if data.len() >= 12
-        && data[0] == b'R' && data[1] == b'I' && data[2] == b'F' && data[3] == b'F'
-        && data[8] == b'W' && data[9] == b'E' && data[10] == b'B' && data[11] == b'P'
+        && data[0] == b'R'
+        && data[1] == b'I'
+        && data[2] == b'F'
+        && data[3] == b'F'
+        && data[8] == b'W'
+        && data[9] == b'E'
+        && data[10] == b'B'
+        && data[11] == b'P'
     {
         let w = u16::from_le_bytes([data[24], data[25]]) as u32;
         let h = u16::from_le_bytes([data[26], data[27]]) as u32;
@@ -259,13 +260,23 @@ fn analyze_image(path_str: &str, prompt: &str) -> anyhow::Result<String> {
          MIME: {}\n\
          Size: {} ({} bytes)\n\
          Dimensions: {}",
-        path_str, info.format, info.mime, fmt_size(info.file_size), info.file_size, dims
+        path_str,
+        info.format,
+        info.mime,
+        fmt_size(info.file_size),
+        info.file_size,
+        dims
     );
 
     if info.format == "unknown" {
         out.push_str("\n\n> ⚠ Format not recognized from magic bytes. First 32 hex bytes:\n> ");
         let data = fs::read(path_str)?;
-        let hex: String = data.iter().take(32).map(|b| format!("{:02X}", b)).collect::<Vec<_>>().join(" ");
+        let hex: String = data
+            .iter()
+            .take(32)
+            .map(|b| format!("{:02X}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
         out.push_str(&hex);
     }
 
@@ -296,7 +307,11 @@ fn describe_scene(path_str: &str, prompt: &str) -> anyhow::Result<String> {
          > Scene description requires an AI vision model (e.g., CLIP, LLaVA, GPT-4o).\n\
          > Currently only file-level metadata is available.\n\
          > This is a placeholder — full vision integration planned for a future phase.",
-        path_str, info.format, info.mime, fmt_size(info.file_size), dims
+        path_str,
+        info.format,
+        info.mime,
+        fmt_size(info.file_size),
+        dims
     );
 
     if !prompt.is_empty() {

@@ -11,15 +11,51 @@ struct ToolInfo {
 /// The 9 built-in tools displayed as cards.
 fn builtin_tools() -> Vec<ToolInfo> {
     vec![
-        ToolInfo { name: "文件管理".into(), icon: "📁", description: "浏览、编辑和管理文件系统" },
-        ToolInfo { name: "终端".into(), icon: "💻", description: "内置终端模拟器" },
-        ToolInfo { name: "Shell 执行".into(), icon: "⚡", description: "运行 Shell 命令和脚本" },
-        ToolInfo { name: "权限管理".into(), icon: "🔐", description: "管理应用权限和沙箱" },
-        ToolInfo { name: "UI 调试".into(), icon: "🔍", description: "检查和调试 UI 组件" },
-        ToolInfo { name: "Logcat".into(), icon: "📋", description: "查看系统和应用日志" },
-        ToolInfo { name: "SQL 查询".into(), icon: "🗄️", description: "数据库查询和管理工具" },
-        ToolInfo { name: "Markdown".into(), icon: "📝", description: "Markdown 编辑和预览" },
-        ToolInfo { name: "语音".into(), icon: "🎤", description: "语音识别和合成" },
+        ToolInfo {
+            name: "文件管理".into(),
+            icon: "📁",
+            description: "浏览、编辑和管理文件系统",
+        },
+        ToolInfo {
+            name: "终端".into(),
+            icon: "💻",
+            description: "内置终端模拟器",
+        },
+        ToolInfo {
+            name: "Shell 执行".into(),
+            icon: "⚡",
+            description: "运行 Shell 命令和脚本",
+        },
+        ToolInfo {
+            name: "权限管理".into(),
+            icon: "🔐",
+            description: "管理应用权限和沙箱",
+        },
+        ToolInfo {
+            name: "UI 调试".into(),
+            icon: "🔍",
+            description: "检查和调试 UI 组件",
+        },
+        ToolInfo {
+            name: "Logcat".into(),
+            icon: "📋",
+            description: "查看系统和应用日志",
+        },
+        ToolInfo {
+            name: "SQL 查询".into(),
+            icon: "🗄️",
+            description: "数据库查询和管理工具",
+        },
+        ToolInfo {
+            name: "Markdown".into(),
+            icon: "📝",
+            description: "Markdown 编辑和预览",
+        },
+        ToolInfo {
+            name: "语音".into(),
+            icon: "🎤",
+            description: "语音识别和合成",
+        },
     ]
 }
 

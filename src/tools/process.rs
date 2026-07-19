@@ -43,8 +43,7 @@ impl ProcessTool {
             Ok(h) => h.block_on(f),
             Err(_) => {
                 // No runtime — create a temporary one (for tests)
-                let rt = tokio::runtime::Runtime::new()
-                    .expect("failed to create tokio runtime");
+                let rt = tokio::runtime::Runtime::new().expect("failed to create tokio runtime");
                 rt.block_on(f)
             }
         }
@@ -133,7 +132,8 @@ impl ProcessTool {
         }
 
         // Spawn asynchronously, then store.
-        let child = cmd.spawn()
+        let child = cmd
+            .spawn()
             .with_context(|| format!("failed to spawn: {}", command))?;
 
         self.processes.lock().insert(
@@ -214,10 +214,7 @@ impl ProcessTool {
         std::thread::sleep(Duration::from_secs(2));
 
         // Check if still running.
-        let still_running = entry.child.try_wait()
-            .ok()
-            .flatten()
-            .is_none();
+        let still_running = entry.child.try_wait().ok().flatten().is_none();
 
         if still_running {
             // Step 2: SIGKILL
@@ -255,33 +252,25 @@ impl ProcessTool {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("missing 'process_id' argument"))?;
 
-        let timeout_secs = args
-            .get("timeout")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(30);
+        let timeout_secs = args.get("timeout").and_then(|v| v.as_u64()).unwrap_or(30);
 
         // We need to wait on the child, but we can't hold the Mutex lock while waiting.
         // Strategy: take the child out of the map, wait, then put it back.
         let mut child_opt = {
             let mut procs = self.processes.lock();
-            procs.remove(pid)
+            procs
+                .remove(pid)
                 .ok_or_else(|| anyhow!("process not found: {}", pid))?
         };
 
         let child = &mut child_opt.child;
 
         let result = self.block_on(async {
-            tokio::time::timeout(
-                Duration::from_secs(timeout_secs),
-                child.wait(),
-            )
-            .await
+            tokio::time::timeout(Duration::from_secs(timeout_secs), child.wait()).await
         });
 
         let (status, exit_code, timed_out) = match result {
-            Ok(Ok(exit_status)) => {
-                ("exited", exit_status.code(), false)
-            }
+            Ok(Ok(exit_status)) => ("exited", exit_status.code(), false),
             Ok(Err(e)) => {
                 return Err(anyhow!("wait error: {}", e));
             }
@@ -434,7 +423,9 @@ mod tests {
         };
 
         let result: Value = serde_json::from_str(
-            &tool.execute(json!({"action": "spawn", "command": cmd})).unwrap(),
+            &tool
+                .execute(json!({"action": "spawn", "command": cmd}))
+                .unwrap(),
         )
         .unwrap();
 
@@ -467,11 +458,15 @@ mod tests {
 
         // Spawn two processes.
         let r1: Value = serde_json::from_str(
-            &tool.execute(json!({"action": "spawn", "command": cmd})).unwrap(),
+            &tool
+                .execute(json!({"action": "spawn", "command": cmd}))
+                .unwrap(),
         )
         .unwrap();
         let r2: Value = serde_json::from_str(
-            &tool.execute(json!({"action": "spawn", "command": cmd})).unwrap(),
+            &tool
+                .execute(json!({"action": "spawn", "command": cmd}))
+                .unwrap(),
         )
         .unwrap();
 
@@ -497,7 +492,9 @@ mod tests {
         };
 
         let r: Value = serde_json::from_str(
-            &tool.execute(json!({"action": "spawn", "command": cmd})).unwrap(),
+            &tool
+                .execute(json!({"action": "spawn", "command": cmd}))
+                .unwrap(),
         )
         .unwrap();
         let pid = r["process_id"].as_str().unwrap().to_string();
@@ -528,7 +525,9 @@ mod tests {
         };
 
         let r: Value = serde_json::from_str(
-            &tool.execute(json!({"action": "spawn", "command": cmd})).unwrap(),
+            &tool
+                .execute(json!({"action": "spawn", "command": cmd}))
+                .unwrap(),
         )
         .unwrap();
         let pid = r["process_id"].as_str().unwrap().to_string();
@@ -560,7 +559,9 @@ mod tests {
         };
 
         let r: Value = serde_json::from_str(
-            &tool.execute(json!({"action": "spawn", "command": cmd})).unwrap(),
+            &tool
+                .execute(json!({"action": "spawn", "command": cmd}))
+                .unwrap(),
         )
         .unwrap();
         let pid = r["process_id"].as_str().unwrap().to_string();

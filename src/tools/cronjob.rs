@@ -125,8 +125,7 @@ impl Schedule {
                     let cron_hour = cursor.format("%H").to_string().parse::<u32>().unwrap();
                     let cron_dom = cursor.format("%d").to_string().parse::<u32>().unwrap();
                     let cron_month = cursor.format("%m").to_string().parse::<u32>().unwrap();
-                    let cron_dow =
-                        cursor.format("%u").to_string().parse::<u32>().unwrap(); // 1=Mon..7=Sun
+                    let cron_dow = cursor.format("%u").to_string().parse::<u32>().unwrap(); // 1=Mon..7=Sun
 
                     let min_ok = min_pat == 0 || cron_min == min_pat;
                     let hour_ok = hour_pat == 0 || cron_hour == hour_pat;
@@ -201,10 +200,7 @@ impl CronJobTool {
             .and_then(|v| v.as_str())
             .ok_or_else(|| anyhow!("missing 'command' argument"))?;
 
-        let repeat = args
-            .get("repeat")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(true);
+        let repeat = args.get("repeat").and_then(|v| v.as_bool()).unwrap_or(true);
 
         let schedule = Schedule::parse(schedule_str)?;
         let now = Utc::now();
@@ -352,13 +348,14 @@ impl CronJobTool {
 
         for (task_id, task) in due {
             // Spawn the command.
-            let spawn_result = tokio::process::Command::new(if cfg!(windows) { "cmd" } else { "sh" })
-                .arg(if cfg!(windows) { "/C" } else { "-c" })
-                .arg(&task.command)
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped())
-                .stdin(std::process::Stdio::null())
-                .spawn();
+            let spawn_result =
+                tokio::process::Command::new(if cfg!(windows) { "cmd" } else { "sh" })
+                    .arg(if cfg!(windows) { "/C" } else { "-c" })
+                    .arg(&task.command)
+                    .stdout(std::process::Stdio::piped())
+                    .stderr(std::process::Stdio::piped())
+                    .stdin(std::process::Stdio::null())
+                    .spawn();
 
             match spawn_result {
                 Ok(mut child) => {
@@ -573,14 +570,15 @@ mod tests {
         let schedule_str = future.to_rfc3339();
 
         let result: Value = serde_json::from_str(
-            &tool.execute(json!({
-                "action": "schedule",
-                "name": "test-task",
-                "schedule": schedule_str,
-                "command": "echo hello",
-                "repeat": false,
-            }))
-            .unwrap(),
+            &tool
+                .execute(json!({
+                    "action": "schedule",
+                    "name": "test-task",
+                    "schedule": schedule_str,
+                    "command": "echo hello",
+                    "repeat": false,
+                }))
+                .unwrap(),
         )
         .unwrap();
 
@@ -604,13 +602,14 @@ mod tests {
         let tool = make_tool();
 
         let result: Value = serde_json::from_str(
-            &tool.execute(json!({
-                "action": "schedule",
-                "name": "pausable",
-                "schedule": "30m",
-                "command": "echo hi",
-            }))
-            .unwrap(),
+            &tool
+                .execute(json!({
+                    "action": "schedule",
+                    "name": "pausable",
+                    "schedule": "30m",
+                    "command": "echo hi",
+                }))
+                .unwrap(),
         )
         .unwrap();
         let task_id = result["task_id"].as_str().unwrap().to_string();
@@ -644,13 +643,14 @@ mod tests {
         let tool = make_tool();
 
         let result: Value = serde_json::from_str(
-            &tool.execute(json!({
-                "action": "schedule",
-                "name": "removable",
-                "schedule": "10m",
-                "command": "echo bye",
-            }))
-            .unwrap(),
+            &tool
+                .execute(json!({
+                    "action": "schedule",
+                    "name": "removable",
+                    "schedule": "10m",
+                    "command": "echo bye",
+                }))
+                .unwrap(),
         )
         .unwrap();
         let task_id = result["task_id"].as_str().unwrap().to_string();
@@ -664,10 +664,9 @@ mod tests {
         assert_eq!(remove["removed"], true);
 
         // Second remove should fail.
-        assert!(
-            tool.execute(json!({"action": "remove", "task_id": task_id}))
-                .is_err()
-        );
+        assert!(tool
+            .execute(json!({"action": "remove", "task_id": task_id}))
+            .is_err());
     }
 
     #[test]

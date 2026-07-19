@@ -53,8 +53,7 @@ pub fn MemoryViewPage() -> Element {
             memories
                 .iter()
                 .filter(|m| {
-                    m.content.to_lowercase().contains(&q)
-                        || m.category.to_lowercase().contains(&q)
+                    m.content.to_lowercase().contains(&q) || m.category.to_lowercase().contains(&q)
                 })
                 .collect()
         }

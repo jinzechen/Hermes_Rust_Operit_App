@@ -14,27 +14,39 @@ const BANNER: &str = r#"
 fn print_tools(agent: &AgentManager) {
     let tools = agent.get_tool_descriptions();
     for (name, desc) in &tools {
-        let d = if desc.len() > 50 { format!("{}…", &desc[..49]) } else { desc.clone() };
+        let d = if desc.len() > 50 {
+            format!("{}…", &desc[..49])
+        } else {
+            desc.clone()
+        };
         println!("  {} — {}", name, d);
     }
 }
 
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
-        .format_timestamp_millis().init();
+        .format_timestamp_millis()
+        .init();
     println!("{}", BANNER);
 
     // Load config from ~/.hermes/config.yaml, fallback to default
-    let home = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME"))
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
         .unwrap_or_else(|_| ".".to_string());
-    let config = AppConfig::load_from_file(
-        std::path::PathBuf::from(&home).join(".hermes/config.yaml")
-    ).unwrap_or_else(|e| { log::warn!("Config: {} — using defaults.", e); AppConfig::default() });
+    let config =
+        AppConfig::load_from_file(std::path::PathBuf::from(&home).join(".hermes/config.yaml"))
+            .unwrap_or_else(|e| {
+                log::warn!("Config: {} — using defaults.", e);
+                AppConfig::default()
+            });
     log::info!("model={} endpoint={}", config.model, config.api_endpoint);
 
     let mut agent = match AgentManager::with_default_tools(config) {
         Ok(a) => a,
-        Err(e) => { log::error!("AgentManager init failed: {}", e); return; }
+        Err(e) => {
+            log::error!("AgentManager init failed: {}", e);
+            return;
+        }
     };
 
     // Startup display
@@ -46,8 +58,13 @@ fn main() {
     print_tools(&agent);
     println!("\n{}", agent.get_memory_summary());
     let h = agent.health_check();
-    println!("\nHealth: provider={} model={} sessions={} uptime={:.0}s",
-        if h.provider_ok { "OK" } else { "DOWN" }, h.model, h.session_count, h.uptime_secs);
+    println!(
+        "\nHealth: provider={} model={} sessions={} uptime={:.0}s",
+        if h.provider_ok { "OK" } else { "DOWN" },
+        h.model,
+        h.session_count,
+        h.uptime_secs
+    );
 
     log::info!("CLI ready. Type 'help'.");
     let stdin = io::stdin();
@@ -59,92 +76,130 @@ fn main() {
         print!("\nhermes> ");
         let _ = io::stdout().flush();
         match stdin.read_line(&mut buf) {
-            Ok(0) => { log::info!("EOF."); break; }
-            Ok(_) => match buf.trim() {
-                "quit" | "exit" => break,
-                "help" => {
-                    println!("Commands: help status tools chat memory sessions clear config health quit");
-                    let tools = agent.get_tool_descriptions();
-                    println!("Tools ({}):", tools.len());
-                    for (n, d) in &tools { println!("  {} — {}", n, d); }
-                }
-                "status" => {
-                    let h = agent.health_check();
-                    println!("model={} endpoint={} tools={} sessions={} uptime={:.1}s provider={}",
-                        h.model, h.endpoint, h.tool_count, h.session_count, h.uptime_secs,
-                        if h.provider_ok { "OK" } else { "DOWN" });
-                }
-                "tools" => { println!("Tools ({}):", agent.tool_count()); print_tools(&agent); }
-                "memory" => println!("{}", agent.get_memory_summary()),
-                "sessions" => {
-                    let ss = agent.list_sessions();
-                    if ss.is_empty() { println!("No active sessions."); }
-                    else { for s in &ss { println!("  {}", s); } }
-                }
-                "health" => {
-                    let h = agent.health_check();
-                    println!("provider={} model={} tools={} sessions={} uptime={:.0}s",
-                        if h.provider_ok { "OK" } else { "DOWN" },
-                        h.model, h.tool_count, h.session_count, h.uptime_secs);
-                }
-                cmd if cmd.starts_with("clear ") => {
-                    agent.clear_session(&cmd[6..].trim());
-                    println!("Cleared.");
-                }
-                cmd if cmd.starts_with("config ") => {
-                    if let Some((k, v)) = cmd[7..].split_once(' ') {
-                        match agent.set_config(k, v) {
-                            Ok(()) => println!("{} → {}", k, v),
-                            Err(e) => println!("Error: {}", e),
+            Ok(0) => {
+                log::info!("EOF.");
+                break;
+            }
+            Ok(_) => {
+                match buf.trim() {
+                    "quit" | "exit" => break,
+                    "help" => {
+                        println!("Commands: help status tools chat memory sessions clear config health quit");
+                        let tools = agent.get_tool_descriptions();
+                        println!("Tools ({}):", tools.len());
+                        for (n, d) in &tools {
+                            println!("  {} — {}", n, d);
                         }
-                    } else { println!("Usage: config <key> <value>"); }
-                }
-                cmd if cmd.starts_with("chat ") => {
-                    match agent.send_message(&sid, &cmd[5..]) {
+                    }
+                    "status" => {
+                        let h = agent.health_check();
+                        println!(
+                            "model={} endpoint={} tools={} sessions={} uptime={:.1}s provider={}",
+                            h.model,
+                            h.endpoint,
+                            h.tool_count,
+                            h.session_count,
+                            h.uptime_secs,
+                            if h.provider_ok { "OK" } else { "DOWN" }
+                        );
+                    }
+                    "tools" => {
+                        println!("Tools ({}):", agent.tool_count());
+                        print_tools(&agent);
+                    }
+                    "memory" => println!("{}", agent.get_memory_summary()),
+                    "sessions" => {
+                        let ss = agent.list_sessions();
+                        if ss.is_empty() {
+                            println!("No active sessions.");
+                        } else {
+                            for s in &ss {
+                                println!("  {}", s);
+                            }
+                        }
+                    }
+                    "health" => {
+                        let h = agent.health_check();
+                        println!(
+                            "provider={} model={} tools={} sessions={} uptime={:.0}s",
+                            if h.provider_ok { "OK" } else { "DOWN" },
+                            h.model,
+                            h.tool_count,
+                            h.session_count,
+                            h.uptime_secs
+                        );
+                    }
+                    cmd if cmd.starts_with("clear ") => {
+                        agent.clear_session(&cmd[6..].trim());
+                        println!("Cleared.");
+                    }
+                    cmd if cmd.starts_with("config ") => {
+                        if let Some((k, v)) = cmd[7..].split_once(' ') {
+                            match agent.set_config(k, v) {
+                                Ok(()) => println!("{} → {}", k, v),
+                                Err(e) => println!("Error: {}", e),
+                            }
+                        } else {
+                            println!("Usage: config <key> <value>");
+                        }
+                    }
+                    cmd if cmd.starts_with("chat ") => match agent.send_message(&sid, &cmd[5..]) {
                         Ok(r) => {
                             println!("\n{}", r.content);
                             if let Some(ref u) = r.token_usage {
-                                println!("[in={} out={} total={}]",
-                                    u.prompt_tokens, u.completion_tokens, u.total_tokens);
+                                println!(
+                                    "[in={} out={} total={}]",
+                                    u.prompt_tokens, u.completion_tokens, u.total_tokens
+                                );
                             }
                         }
                         Err(e) => println!("Error: {}", e),
-                    }
-                }
-                "chat" => {
-                    println!("Chat mode. /help /tools /clear /memory /quit");
-                    loop {
-                        buf.clear();
-                        print!("you> ");
-                        let _ = io::stdout().flush();
-                        match stdin.read_line(&mut buf) {
-                            Ok(0) | Err(_) => break,
-                            Ok(_) => match buf.trim() {
-                                "/quit" | "/exit" => break,
-                                "/help" => println!("  /help /tools /clear /memory /quit"),
-                                "/tools" => print_tools(&agent),
-                                "/clear" => { agent.clear_session(&sid); println!("Cleared."); }
-                                "/memory" => println!("{}", agent.get_memory_summary()),
-                                "" => continue,
-                                msg => match agent.send_message(&sid, msg) {
-                                    Ok(r) => {
-                                        println!("ai> {}", r.content);
-                                        if let Some(ref u) = r.token_usage {
-                                            println!("     [in={} out={} total={}]",
-                                                u.prompt_tokens, u.completion_tokens, u.total_tokens);
-                                        }
+                    },
+                    "chat" => {
+                        println!("Chat mode. /help /tools /clear /memory /quit");
+                        loop {
+                            buf.clear();
+                            print!("you> ");
+                            let _ = io::stdout().flush();
+                            match stdin.read_line(&mut buf) {
+                                Ok(0) | Err(_) => break,
+                                Ok(_) => match buf.trim() {
+                                    "/quit" | "/exit" => break,
+                                    "/help" => println!("  /help /tools /clear /memory /quit"),
+                                    "/tools" => print_tools(&agent),
+                                    "/clear" => {
+                                        agent.clear_session(&sid);
+                                        println!("Cleared.");
                                     }
-                                    Err(e) => println!("error> {}", e),
+                                    "/memory" => println!("{}", agent.get_memory_summary()),
+                                    "" => continue,
+                                    msg => match agent.send_message(&sid, msg) {
+                                        Ok(r) => {
+                                            println!("ai> {}", r.content);
+                                            if let Some(ref u) = r.token_usage {
+                                                println!(
+                                                    "     [in={} out={} total={}]",
+                                                    u.prompt_tokens,
+                                                    u.completion_tokens,
+                                                    u.total_tokens
+                                                );
+                                            }
+                                        }
+                                        Err(e) => println!("error> {}", e),
+                                    },
                                 },
-                            },
+                            }
                         }
+                        println!("Exited chat mode.");
                     }
-                    println!("Exited chat mode.");
+                    "" => {}
+                    other => println!("Unknown: '{}'. Type 'help'.", other),
                 }
-                "" => {}
-                other => println!("Unknown: '{}'. Type 'help'.", other),
-            },
-            Err(e) => { log::error!("stdin: {}", e); break; }
+            }
+            Err(e) => {
+                log::error!("stdin: {}", e);
+                break;
+            }
         }
     }
 }

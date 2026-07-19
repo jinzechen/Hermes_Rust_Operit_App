@@ -32,6 +32,9 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeClipboardSet<
     text: JString<'local>,
 ) -> jboolean {
     let t: String = env.get_string(&text).map(|s| s.into()).unwrap_or_default();
-    log::info!("[Clipboard] Set ← \"{}\" (placeholder)", &t[..t.len().min(80)]);
+    log::info!(
+        "[Clipboard] Set ← \"{}\" (placeholder)",
+        &t[..t.len().min(80)]
+    );
     jni::sys::JNI_TRUE
 }

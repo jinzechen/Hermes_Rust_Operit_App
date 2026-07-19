@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use dioxus::prelude::*;
 use crate::ui::components::MessageBubble;
 use chrono::Local;
+use dioxus::prelude::*;
+use serde::{Deserialize, Serialize};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Data models (preserved from original skeleton)
@@ -10,7 +10,7 @@ use chrono::Local;
 /// A single message in a chat conversation.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ChatMessage {
-    pub role: String,     // "user" or "assistant"
+    pub role: String, // "user" or "assistant"
     pub content: String,
     pub timestamp: String,
 }
@@ -109,7 +109,9 @@ pub fn ChatPage() -> Element {
                 return;
             }
             // Add user message
-            messages.write().push(ChatMessage::new("user", text.clone()));
+            messages
+                .write()
+                .push(ChatMessage::new("user", text.clone()));
             input_text.set(String::new());
 
             // Simulated assistant response (placeholder until backend is wired)

@@ -1,14 +1,10 @@
-use dioxus::prelude::*;
 use super::CopyButton;
+use dioxus::prelude::*;
 
 /// A chat message bubble component that renders a message
 /// with role-specific styling (user, assistant, or tool).
 #[component]
-pub fn MessageBubble(
-    role: String,
-    content: String,
-    timestamp: String,
-) -> Element {
+pub fn MessageBubble(role: String, content: String, timestamp: String) -> Element {
     let bubble_class = match role.as_str() {
         "user" => "msg-bubble msg-user",
         "assistant" => "msg-bubble msg-assistant",
