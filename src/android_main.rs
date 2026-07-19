@@ -60,11 +60,11 @@ pub extern "C" fn ANativeActivity_onCreate(
     }
 }
 
-unsafe extern "C" fn on_started(_activity: *mut c_void) {
+unsafe extern "C" fn on_started(_activity: *mut ndk_sys::ANativeActivity) {
     log::info!("Lifecycle: onStart/onResume");
 }
 
-unsafe extern "C" fn on_window_created(activity: *mut c_void, _window: *mut c_void) {
+unsafe extern "C" fn on_window_created(activity: *mut ndk_sys::ANativeActivity, _window: *mut c_void) {
     if WEBVIEW_CREATED {
         return;
     }
@@ -74,7 +74,7 @@ unsafe extern "C" fn on_window_created(activity: *mut c_void, _window: *mut c_vo
 
     let jvm = jni::JavaVM::from_raw(JVM_PTR).unwrap();
     let mut env = jvm.get_env().unwrap();
-    let activity_jobj = JObject::from_raw(activity as jni::sys::jobject);
+    let activity_jobj = JObject::from_raw((*activity).clazz as jni::sys::jobject);
 
     crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
 
