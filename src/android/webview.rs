@@ -135,16 +135,21 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         WEBVIEW_REF = Some(global);
     }
 
-    // ── 7. Replace activity content with WebView ──
-    // NativeActivity has a SurfaceView that blocks our WebView.
-    // Use setContentView to replace it entirely.
-    let _ = env.call_method(
-        activity,
-        "setContentView",
-        "(Landroid/view/View;)V",
-        &[JValue::Object(&webview)],
-    );
-    log::info!("[WebView] setContentView replaced");
+    // ── 7. Post setContentView to main thread via Java helper ──
+    // setContentView MUST run on the UI thread (CalledFromWrongThreadException).
+    // Our Java helper posts a Runnable to Activity.runOnUiThread().
+    let helper = env
+        .find_class("com/operit/hermes/WebViewHelper")
+        .expect("WebViewHelper class must be bundled (src/android/java/...)");
+
+    env.call_static_method(
+        &helper,
+        "setupWebViewOnUiThread",
+        "(Landroid/app/Activity;Landroid/webkit/WebView;)V",
+        &[JValue::Object(activity), JValue::Object(&webview)],
+    )
+    .expect("setupWebViewOnUiThread");
+    log::info!("[WebView] Posted setContentView to UI thread");
 
     // ── 8. Load HTML ──
     let html = get_chat_html();
