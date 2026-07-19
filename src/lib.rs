@@ -9,6 +9,9 @@ pub mod tools;
 pub mod ui;
 
 #[cfg(target_os = "android")]
+pub mod android_main;
+
+#[cfg(target_os = "android")]
 pub mod android;
 
 // Re-exports
