@@ -1,50 +1,50 @@
-//! Android entry point — launched by NativeActivity.
+//! Android entry point — NativeActivity onCreate handler.
 //!
-//! ndk_glue::main spawns a NEW thread for android_main(), so we must:
-//! 1. attach_current_thread() to get a JNI env
-//! 2. Looper.prepare() so WebView (which needs a Handler/Looper) can init
-//! 3. Looper.loop() at the end to keep the thread alive processing events
+//! Exports ANativeActivity_onCreate directly (no ndk_glue::main wrapper)
+//! so we run on the Android MAIN thread, which already has a Looper.
+//! WebView MUST be created on a thread with a Looper (otherwise NPE crash).
 
-#[cfg(target_os = "android")]
 use jni::objects::JObject;
+use std::ffi::c_void;
 
-#[cfg(target_os = "android")]
-#[ndk_glue::main(backtrace = "on")]
-fn android_main() {
+/// Called by the Android framework on the MAIN thread.
+/// Creates the WebView directly — no thread-spawning wrapper.
+#[no_mangle]
+pub extern "C" fn ANativeActivity_onCreate(
+    activity: *mut c_void,
+    _saved_state: *mut c_void,
+    _saved_state_size: usize,
+) {
+    // activity is an ANativeActivity* — we need to extract the JavaVM
+    // and the JNI environment from it.
+    // ANativeActivity layout: clazz, vm, env, ...
+    // vm is at offset after ANativeActivity_callbacks (callbacks + instance data etc.)
+    // Actually, we use the ndk::ffi types to access it properly.
+
+    let activity_ref = unsafe { &*(activity as *const ndk::ffi::ANativeActivity) };
+
+    // Get JavaVM pointer from the activity
+    let vm_ptr = activity_ref.vm as *mut *const jni::sys::JNIInvokeInterface_;
+    let jvm = unsafe { jni::JavaVM::from_raw(vm_ptr) }.expect("JavaVM");
+
+    // Get the JNI environment that's already attached on the main thread
+    let mut env = jvm.get_env().expect("JNIEnv on main thread");
+
+    // Initialize logging
     android_logger::init_once(
         android_logger::Config::default()
             .with_max_level(log::LevelFilter::Debug)
             .with_tag("HermesOperit"),
     );
 
-    log::info!("HermesOperit starting on Android (JNI WebView mode)...");
+    log::info!("HermesOperit starting (main thread, ANativeActivity_onCreate)...");
 
-    let native = ndk_glue::native_activity();
+    // Get the Activity JObject from the ANativeActivity's clazz field
+    let activity_jobj = unsafe { JObject::from_raw(activity_ref.clazz as jni::sys::jobject) };
 
-    // attach_current_thread: ndk_glue spawns us on a worker thread,
-    // so we must explicitly attach. Keep the guard alive for the whole
-    // function so the thread stays attached.
-    let jvm = unsafe { jni::JavaVM::from_raw(native.vm()) }
-        .expect("Failed to get JavaVM");
-    let mut env = jvm
-        .attach_current_thread()
-        .expect("Failed to attach to JVM");
+    // Create WebView directly on the main thread (has Looper!)
+    crate::android::webview::init_webview(&mut env, &activity_jobj);
 
-    // WebView needs a Looper (Handler.init requires Looper.mQueue)
-    log::info!("[Main] Preparing Looper for WebView thread...");
-    env.call_static_method("android/os/Looper", "prepare", "()V", &[])
-        .expect("Failed to prepare Looper");
-
-    let activity = unsafe { JObject::from_raw(native.activity()) };
-
-    log::info!("[Main] JVM attached + Looper ready, initializing WebView...");
-    crate::android::webview::init_webview(&mut env, &activity);
-    log::info!("HermesOperit WebView initialized, entering event loop");
-
-    // Run the Looper — blocks forever, processing Android UI events
-    env.call_static_method("android/os/Looper", "loop", "()V", &[])
-        .expect("Looper.loop failed");
+    log::info!("HermesOperit WebView initialized on main thread");
+    // The native activity event loop continues after this function returns.
 }
-
-#[cfg(not(target_os = "android"))]
-fn main() {}
