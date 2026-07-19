@@ -43,19 +43,29 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
     let global = env.new_global_ref(&webview).unwrap();
     unsafe { WEBVIEW_REF = Some(global); }
 
-    // Replace content — post to next frame to ensure window surface is ready
-    // Calling setContentView directly in onNativeWindowCreated can fail
-    // because the view hierarchy isn't fully attached yet.
-    let runnable_class = env.find_class("java/lang/Runnable").ok();
-    // Simple approach: just call setContentView — it works in onNativeWindowCreated
-    // on most devices. If black screen persists, need View.post() approach.
+    // Replace content via window — addContentView overlays on top
+    // of the NativeActivity SurfaceView (which is black).
+    let window = env
+        .call_method(activity, "getWindow", "()Landroid/view/Window;", &[])
+        .unwrap();
+    let w = window.l().unwrap();
+
+    // Create LayoutParams(MATCH_PARENT, MATCH_PARENT, 0, 0)
+    let layout_params = env
+        .new_object(
+            "android/view/ViewGroup\\$LayoutParams",
+            "(II)V",
+            &[JValue::Int(-1), JValue::Int(-1)], // MATCH_PARENT
+        )
+        .unwrap();
+
     env.call_method(
-        activity,
-        "setContentView",
-        "(Landroid/view/View;)V",
-        &[JValue::Object(&webview)],
+        w,
+        "addContentView",
+        "(Landroid/view/View;Landroid/view/ViewGroup\\$LayoutParams;)V",
+        &[JValue::Object(&webview), JValue::Object(&layout_params)],
     )
-    .expect("setContentView");
+    .expect("addContentView");
 
     // Load HTML
     let html = get_chat_html();
