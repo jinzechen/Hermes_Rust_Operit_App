@@ -69,6 +69,7 @@ reqwest = { version = "0.13", default-features = false, features = ["json", "blo
 # OAuth
 oauth2 = { version = "4.4", default-features = false, features = ["reqwest"] }
 hermes-agent = { git = "https://github.com/Lumio-Research/hermes-agent-rs", version = "0.1.1" }
+dioxus = { version = "0.5", features = ["html"] }
 
 # Android: 取消下面注释 + 安装 NDK 后执行:
 #   rustup target add aarch64-linux-android

@@ -6,7 +6,7 @@ pub mod tools;
 
 // UI module requires dioxus (cargo add dioxus@0.5 --features html)
 // #[cfg(feature = "gui")]
-// pub mod ui;
+pub mod ui;
 
 #[cfg(target_os = "android")]
 pub mod android;

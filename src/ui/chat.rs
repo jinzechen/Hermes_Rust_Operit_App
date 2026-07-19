@@ -134,7 +134,6 @@ pub fn ChatPage() -> Element {
         let mut send_message = send_message.clone();
         move |evt: Event<KeyboardData>| {
             if evt.key() == Key::Enter && !evt.modifiers().shift() {
-                evt.prevent_default();
                 send_message(());
             }
         }
