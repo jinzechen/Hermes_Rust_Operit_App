@@ -1,5 +1,5 @@
-//! Android entry point — runs on MAIN thread.
-//! Creates WebView then runs ALooper event loop so window can render.
+//! Android entry point — main thread, manual ANativeActivity_onCreate.
+//! Creates WebView after the first ALooper poll (window surface ready).
 
 use jni::objects::JObject;
 use std::ffi::c_void;
@@ -26,31 +26,28 @@ pub extern "C" fn ANativeActivity_onCreate(
             .with_tag("HermesOperit"),
     );
 
-    log::info!("HermesOperit starting (MAIN thread)");
+    log::info!("HermesOperit onCreate (MAIN thread)");
 
     let jvm = unsafe { jni::JavaVM::from_raw(act.vm) }.expect("JavaVM");
     let mut env = jvm.get_env().expect("JNIEnv");
     let activity_jobj = unsafe { JObject::from_raw(act.clazz) };
 
-    crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
+    let mut created = false;
 
-    log::info!("WebView created. Running event loop...");
-
-    // Run ALooper event loop so the window actually renders.
-    // Without this, the surface is never composited → black screen.
+    // Event loop — wait for first frame, then create WebView
     loop {
         let mut fdesc: i32 = 0;
         let mut events: i32 = 0;
         let mut data: *mut c_void = std::ptr::null_mut();
         unsafe {
-            ndk_sys::ALooper_pollAll(-1, &mut fdesc, &mut events, &mut data);
+            ndk_sys::ALooper_pollAll(100, &mut fdesc, &mut events, &mut data);
         }
-        if fdesc >= 0 && events != 0 {
-            // Event ready on fd — would handle in full impl
-        }
-        // Process Android lifecycle events
-        if events & ndk_sys::ALOOPER_EVENT_INPUT as i32 != 0 {
-            // Input events
+
+        if !created {
+            log::info!("First poll done, creating WebView...");
+            crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
+            created = true;
+            log::info!("WebView created, continuing event loop");
         }
     }
 }
