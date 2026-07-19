@@ -15,35 +15,102 @@ use log;
 
 static mut WEBVIEW_REF: Option<GlobalRef> = None;
 
-/// Set the HTML content on the Java helper, then delegate WebView
-/// creation to the UI thread via WebViewHelper.createOnUiThread().
+/// Set the HTML content and create WebView via reflection
+/// (DexClassLoader loads our classes.dex at runtime).
 pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
-    log::info!("[WebView] Setting HTML + delegating to UI thread...");
+    log::info!("[WebView] Loading DEX + delegating to UI thread...");
 
-    // ── 1. Set the HTML content on the Java helper ──
-    let html = get_chat_html();
+    // ── 1. Load our classes.dex via DexClassLoader ──
+    // The DEX is at the root of the APK. Get APK path via context.
+    let ctx = JObject::from(
+        env.call_method(activity, "getApplicationContext", "()Landroid/content/Context;", &[])
+            .unwrap()
+            .l()
+            .unwrap(),
+    );
+
+    let pkg_info = env
+        .call_method(&ctx, "getPackageManager", "()Landroid/content/pm/PackageManager;", &[])
+        .unwrap();
+    let pkg_name = env
+        .call_method(&ctx, "getPackageName", "()Ljava/lang/String;", &[])
+        .unwrap();
+    let flags = JValue::Int(0);
+    let app_info = env
+        .call_method(
+            pkg_info.l().unwrap(),
+            "getApplicationInfo",
+            "(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;",
+            &[pkg_name.borrow(), flags],
+        )
+        .unwrap();
+    let source_dir = env
+        .get_field(app_info.l().unwrap(), "sourceDir", "Ljava/lang/String;")
+        .unwrap();
+    let apk_path: String = env.get_string(&source_dir.l().unwrap().into()).unwrap().into();
+
+    log::info!("[WebView] APK path: {}", apk_path);
+
+    // Create DexClassLoader to load our DEX
+    let dex_output = env
+        .call_method(&ctx, "getDir", "(Ljava/lang/String;I)Ljava/io/File;", &[
+            JValue::Object(&env.new_string("dex").unwrap()),
+            JValue::Int(0),
+        ])
+        .unwrap();
+    let dex_path = env
+        .call_method(dex_output.l().unwrap(), "getAbsolutePath", "()Ljava/lang/String;", &[])
+        .unwrap();
+
+    let class_loader = env
+        .new_object(
+            "dalvik/system/DexClassLoader",
+            "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/ClassLoader;)V",
+            &[
+                JValue::Object(&env.new_string(&apk_path).unwrap()),
+                JValue::Object(&dex_path.l().unwrap()),
+                JValue::Object(&JObject::null()),
+                JValue::Object(&env
+                    .call_method(activity, "getClassLoader", "()Ljava/lang/ClassLoader;", &[])
+                    .unwrap()
+                    .l()
+                    .unwrap()),
+            ],
+        )
+        .expect("DexClassLoader");
+
     let helper = env
-        .find_class("com/operit/hermes/WebViewHelper")
-        .expect("WebViewHelper class not found — check DEX injection");
+        .call_method(
+            &class_loader,
+            "loadClass",
+            "(Ljava/lang/String;)Ljava/lang/Class;",
+            &[JValue::Object(&env.new_string("com.operit.hermes.WebViewHelper").unwrap())],
+        )
+        .expect("loadClass(WebViewHelper)");
+    let helper_cls = helper.l().unwrap();
 
+    log::info!("[WebView] WebViewHelper loaded via DexClassLoader");
+
+    // ── 2. Set HTML ──
+    let html = get_chat_html();
     env.call_static_method(
-        &helper,
+        helper_cls,
         "setHtml",
         "(Ljava/lang/String;)V",
         &[JValue::Object(&env.new_string(&html).unwrap())],
     )
-    .expect("WebViewHelper.setHtml");
+    .expect("setHtml");
     log::info!("[WebView] HTML set ({} bytes)", html.len());
 
-    // ── 2. Post WebView creation to UI thread ──
+    // ── 3. Delegate WebView creation to UI thread ──
     env.call_static_method(
-        &helper,
+        helper_cls,
         "createOnUiThread",
         "(Landroid/app/Activity;)V",
         &[JValue::Object(activity)],
     )
-    .expect("WebViewHelper.createOnUiThread");
-    log::info!("[WebView] Posted WebView creation to UI thread");
+    .expect("createOnUiThread");
+    log::info!("[WebView] Posted to UI thread");
 }
 
 /// Chat UI HTML — inlined for zero external file dependencies.
