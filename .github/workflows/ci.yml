@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
 
@@ -16,14 +17,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Clone UA Rust dependency
-        run: git clone https://github.com/jinzechen/Understand_Anything_Rust.git ../Understand_Anything_Rust
+        run: git clone --depth 1 https://github.com/jinzechen/Understand_Anything_Rust.git ../Understand_Anything_Rust
 
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
 
-      - name: Cache cargo
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cargo/registry
@@ -37,8 +37,8 @@ jobs:
       - name: cargo test
         run: cargo test --lib
 
-      - name: cargo clippy 2>&1 || true
-        run: cargo clippy 2>&1 || true 2>&1 || true
+      - name: cargo clippy
+        run: cargo clippy -- -D warnings || true
 
       - name: cargo fmt
-        run: cargo fmt --check 2>&1 || true
+        run: cargo fmt --check || true
