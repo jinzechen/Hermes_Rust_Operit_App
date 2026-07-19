@@ -67,6 +67,34 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
     )
     .expect("addContentView");
 
+    // Hide the NativeActivity's black SurfaceView
+    let decor = env
+        .call_method(w, "getDecorView", "()Landroid/view/View;", &[])
+        .unwrap();
+    let d = decor.l().unwrap();
+    // SurfaceView is usually at index 0 in the decor
+    let child_count = env
+        .call_method(d, "getChildCount", "()I", &[])
+        .unwrap();
+    let count = child_count.i().unwrap();
+    for i in 0..count {
+        let child = env
+            .call_method(d, "getChildAt", "(I)Landroid/view/View;", &[JValue::Int(i)])
+            .unwrap();
+        let c = child.l().unwrap();
+        let cls = env.call_method(c, "getClass", "()Ljava/lang/Class;", &[]).unwrap();
+        let name = env
+            .call_method(cls.l().unwrap(), "getName", "()Ljava/lang/String;", &[])
+            .unwrap();
+        let name_str: String = env.get_string(&name.l().unwrap().into()).unwrap().into();
+        if name_str.contains("SurfaceView") {
+            env.call_method(c, "setVisibility", "(I)V", &[JValue::Int(8)]) // GONE
+                .unwrap();
+            log::info!("[WebView] Hidden SurfaceView at index {i}");
+            break;
+        }
+    }
+
     // Load HTML
     let html = get_chat_html();
     let base_url = env.new_string("file:///android_asset/").unwrap();
