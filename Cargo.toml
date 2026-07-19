@@ -13,7 +13,7 @@ activity_name = "android.app.NativeActivity"
 features = ["android.hardware.touchscreen"]
 
 [package.metadata.android.signing.debug]
-keystore_path = "debug.keystore"
+path = "debug.keystore"
 keystore_password = "android"
 key_alias = "androiddebugkey"
 key_password = "android"
