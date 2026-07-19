@@ -16,7 +16,12 @@ fn android_main() {
     log::info!("HermesOperit starting on Android...");
 
     // Launch the Dioxus app
-    dioxus_mobile::launch(crate::ui::app::App);
+    // dioxus-mobile 0.5.x: launch is a module, call launch::launch(root, contexts, config)
+    dioxus_mobile::launch::launch(
+        crate::ui::app::App,
+        vec![],
+        dioxus_mobile::Config::default(),
+    );
 
     log::info!("HermesOperit started successfully");
 }

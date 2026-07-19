@@ -12,7 +12,7 @@ use jni::JNIEnv;
 /// Kotlin: `external fun nativeAccessibilityGetTree(): String`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibilityGetTree<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jstring {
     log::info!("[A11y] GetTree requested");
@@ -30,7 +30,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibility
 /// Kotlin: `external fun nativeAccessibilityFindById(resourceId: String): String`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibilityFindById<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     resource_id: JString<'local>,
 ) -> jstring {
@@ -53,7 +53,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibility
 /// Kotlin: `external fun nativeAccessibilityClick(resourceId: String): Boolean`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibilityClick<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     resource_id: JString<'local>,
 ) -> jboolean {
@@ -70,7 +70,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibility
 /// Kotlin: `external fun nativeAccessibilitySetText(resourceId: String, text: String): Boolean`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeAccessibilitySetText<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     resource_id: JString<'local>,
     text: JString<'local>,

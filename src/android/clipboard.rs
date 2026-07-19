@@ -11,7 +11,7 @@ use jni::JNIEnv;
 /// Kotlin: `external fun nativeClipboardGet(): String`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeClipboardGet<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
 ) -> jstring {
     log::info!("[Clipboard] Get requested (placeholder)");
@@ -27,7 +27,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeClipboardGet<
 /// Kotlin: `external fun nativeClipboardSet(text: String): Boolean`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeClipboardSet<'local>(
-    mut env: JNIEnv<'local>,
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     text: JString<'local>,
 ) -> jboolean {
