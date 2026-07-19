@@ -9,7 +9,7 @@ package_name = "com.operit.hermes"
 apk_name = "HermesOperit"
 target_sdk_version = 34
 min_sdk_version = 26
-activity_name = "android.app.NativeActivity"
+activity_name = "com.operit.hermes.MainActivity"
 features = ["android.hardware.touchscreen"]
 
 [package.metadata.android.signing.debug]
