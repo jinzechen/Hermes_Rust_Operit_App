@@ -99,8 +99,6 @@ dioxus = { version = "0.5", features = ["html"] }
 # Android JNI bridge (pure Rust, Android target only)
 [target.'cfg(target_os = "android")'.dependencies]
 jni = { version = "0.21", features = ["invocation"] }
-ndk-sys = "0.6"
-ndk-glue = "0.7"
 android_logger = "0.14"
 
 [profile.release]
