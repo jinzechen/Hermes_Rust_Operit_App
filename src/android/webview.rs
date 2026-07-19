@@ -90,15 +90,15 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         .unwrap();
     let settings_obj = settings.l().unwrap();
 
-    let _ = env.call_method(settings_obj, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(1)]);
+    let _ = env.call_method(&settings_obj, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(1)]);
     let _ = env.call_method(
-        settings_obj,
+        &settings_obj,
         "setDomStorageEnabled",
         "(Z)V",
         &[JValue::Bool(1)],
     );
     let _ = env.call_method(
-        settings_obj,
+        &settings_obj,
         "setAllowFileAccess",
         "(Z)V",
         &[JValue::Bool(1)],
