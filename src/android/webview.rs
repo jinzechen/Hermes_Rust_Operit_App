@@ -90,28 +90,19 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         .unwrap();
     let settings_obj = settings.l().unwrap();
 
-    let _ = env.call_method(settings_obj, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(true)]);
+    let _ = env.call_method(settings_obj, "setJavaScriptEnabled", "(Z)V", &[JValue::Bool(1)]);
     let _ = env.call_method(
         settings_obj,
         "setDomStorageEnabled",
         "(Z)V",
-        &[JValue::Bool(true)],
+        &[JValue::Bool(1)],
     );
     let _ = env.call_method(
         settings_obj,
         "setAllowFileAccess",
         "(Z)V",
-        &[JValue::Bool(true)],
+        &[JValue::Bool(1)],
     );
-    // Allow mixed content (local HTML loading remote resources)
-    if let Ok(api_26) = env.get_static_field("android/os/Build$VERSION_CODES", "O", "I") {
-        let _ = env.call_method(
-            settings_obj,
-            "setMixedContentMode",
-            "(I)V",
-            &[JValue::Int(0)], // MIXED_CONTENT_ALWAYS_ALLOW
-        );
-    }
 
     log::info!("[WebView] WebSettings configured");
 
