@@ -66,31 +66,8 @@ jobs:
           keytool -genkey -v -keystore debug.keystore -storepass android -keypass android \
             -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Debug, OU=Hermes, O=Operit, L=Shanghai, ST=Shanghai, C=CN" 2>/dev/null
-          # Compile Java WebViewHelper to DEX
-          mkdir -p target/java_classes
-          javac -source 8 -target 8 -d target/java_classes \
-            -cp "$ANDROID_HOME/platforms/android-34/android.jar" \
-            -XDignore.symbol.file \
-            src/android/java/com/operit/hermes/WebViewHelper.java \
-            || { echo "javac FAILED"; exit 1; }
-          $ANDROID_HOME/build-tools/34.0.0/d8 \
-            --lib "$ANDROID_HOME/platforms/android-34/android.jar" \
-            --output target/java_classes/ \
-            target/java_classes/com/operit/hermes/WebViewHelper.class \
-            || { echo "d8 FAILED"; exit 1; }
-          # Build APK
           cargo install cargo-apk
           cargo apk build --lib
-          # Inject classes.dex into APK
-          APK=target/debug/apk/HermesOperit.apk
-          cp "$APK" "$APK.tmp"
-          cd target/java_classes && jar uf "../../$APK.tmp" classes.dex && cd ../.. || { echo "jar FAILED"; exit 1; }
-          mv "$APK.tmp" "$APK"
-          echo "DEX injected: $(unzip -l $APK | grep classes.dex)"
-          # Re-sign after modification
-          $ANDROID_HOME/build-tools/34.0.0/apksigner sign --ks debug.keystore \
-            --ks-pass pass:android --key-pass pass:android "$APK" \
-            || { echo "apksigner FAILED"; exit 1; }
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:

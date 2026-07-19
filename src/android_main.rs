@@ -1,33 +1,48 @@
-//! Android entry point — NativeActivity via ndk_glue::main.
+//! Android entry point — NativeActivity onCreate handler.
 //!
-//! ndk_glue handles the NativeActivity lifecycle and spawns a worker thread.
-//! We attach JNI, set the HTML, and delegate WebView creation to the UI
-//! thread via Java's WebViewHelper.createOnUiThread().
-//! The worker thread then blocks waiting for native activity events.
+//! Runs on the Android MAIN thread (has proper Looper for WebView).
+//! Also delegates lifecycle management to ndk_glue.
 
-#[cfg(target_os = "android")]
 use jni::objects::JObject;
+use std::ffi::c_void;
 
-#[cfg(target_os = "android")]
-#[ndk_glue::main(backtrace = "on")]
-fn android_main() {
+#[repr(C)]
+struct NativeActivityRaw {
+    callbacks: *mut c_void,
+    vm: *mut *const jni::sys::JNIInvokeInterface_,
+    _env: *mut c_void,
+    clazz: jni::sys::jobject,
+}
+
+#[no_mangle]
+pub extern "C" fn ANativeActivity_onCreate(
+    activity: *mut c_void,
+    saved_state: *mut c_void,
+    saved_state_size: usize,
+) {
+    let act = unsafe { &*(activity as *const NativeActivityRaw) };
+
+    // Init logging
     android_logger::init_once(
         android_logger::Config::default()
             .with_max_level(log::LevelFilter::Debug)
             .with_tag("HermesOperit"),
     );
 
-    log::info!("HermesOperit starting (ndk_glue worker thread)...");
+    log::info!("HermesOperit starting (MAIN thread)");
 
-    let native = ndk_glue::native_activity();
-    let jvm = unsafe { jni::JavaVM::from_raw(native.vm()) }.expect("JavaVM");
-    let mut env = jvm.attach_current_thread().expect("JNI attach");
+    let jvm = unsafe { jni::JavaVM::from_raw(act.vm) }.expect("JavaVM");
+    let mut env = jvm.get_env().expect("JNIEnv");
+    let activity_jobj = unsafe { JObject::from_raw(act.clazz) };
 
-    let activity = unsafe { JObject::from_raw(native.activity()) };
+    // Create WebView directly on the main thread
+    crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
 
-    log::info!("[Main] Delegating WebView to UI thread via Java helper...");
-    crate::android::webview::init_webview(&mut env, &activity);
-    log::info!("HermesOperit done — worker thread idle. UI thread handles WebView.");
+    log::info!("WebView created on main thread. Starting ndk_glue lifecycle...");
+
+    // Now hand over to ndk_glue for lifecycle management
+    // (input events, pause/resume, etc.)
+    ndk_glue::init(activity, saved_state, saved_state_size);
 }
 
 #[cfg(not(target_os = "android"))]
