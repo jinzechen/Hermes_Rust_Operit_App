@@ -1,5 +1,5 @@
 //! Android entry point — runs on MAIN thread.
-//! WebView MUST be created on main thread (w/ proper Looper).
+//! Creates WebView then runs ALooper event loop so window can render.
 
 use jni::objects::JObject;
 use std::ffi::c_void;
@@ -34,7 +34,25 @@ pub extern "C" fn ANativeActivity_onCreate(
 
     crate::android::webview::init_webview_direct(&mut env, &activity_jobj);
 
-    log::info!("HermesOperit ready on main thread");
+    log::info!("WebView created. Running event loop...");
+
+    // Run ALooper event loop so the window actually renders.
+    // Without this, the surface is never composited → black screen.
+    loop {
+        let mut fdesc: i32 = 0;
+        let mut events: i32 = 0;
+        let mut data: *mut c_void = std::ptr::null_mut();
+        unsafe {
+            ndk_sys::ALooper_pollAll(-1, &mut fdesc, &mut events, &mut data);
+        }
+        if fdesc >= 0 && events != 0 {
+            // Event ready on fd — would handle in full impl
+        }
+        // Process Android lifecycle events
+        if events & ndk_sys::ALOOPER_EVENT_INPUT as i32 != 0 {
+            // Input events
+        }
+    }
 }
 
 #[cfg(not(target_os = "android"))]
