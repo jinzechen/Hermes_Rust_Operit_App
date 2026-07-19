@@ -88,13 +88,14 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
         )
         .expect("loadClass(WebViewHelper)");
     let helper_cls = helper.l().unwrap();
+    let helper_cls = unsafe { jni::objects::JClass::from_raw(helper_cls.as_raw()) };
 
     log::info!("[WebView] WebViewHelper loaded via DexClassLoader");
 
     // ── 2. Set HTML ──
     let html = get_chat_html();
     env.call_static_method(
-        helper.l().unwrap(),
+        &helper_cls,
         "setHtml",
         "(Ljava/lang/String;)V",
         &[JValue::Object(&env.new_string(&html).unwrap())],
@@ -104,7 +105,7 @@ pub fn init_webview(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
 
     // ── 3. Delegate WebView creation to UI thread ──
     env.call_static_method(
-        helper.l().unwrap(),
+        &helper_cls,
         "createOnUiThread",
         "(Landroid/app/Activity;)V",
         &[JValue::Object(activity)],
