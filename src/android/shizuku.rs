@@ -13,7 +13,7 @@ use jni::JNIEnv;
 /// Kotlin: `external fun nativeShizukuExec(command: String): String`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeShizukuExec<'local>(
-    env: JNIEnv<'local>,
+    mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     command: JString<'local>,
 ) -> jstring {
@@ -66,7 +66,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeShizukuSwipe<
 /// Kotlin: `external fun nativeShizukuType(text: String): Boolean`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeShizukuType<'local>(
-    env: JNIEnv<'local>,
+    mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     text: JString<'local>,
 ) -> jboolean {

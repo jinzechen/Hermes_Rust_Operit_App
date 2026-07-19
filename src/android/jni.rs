@@ -43,7 +43,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeInit<'local>(
 /// Kotlin: `external fun nativeSendMessage(agentPtr: Long, message: String): String`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeSendMessage<'local>(
-    env: JNIEnv<'local>,
+    mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     agent_ptr: jlong,
     message: JString<'local>,
@@ -67,7 +67,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeSendMessage<'
 /// Kotlin: `external fun nativeToolNames(agentPtr: Long): String`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeToolNames<'local>(
-    env: JNIEnv<'local>,
+    mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     agent_ptr: jlong,
 ) -> jstring {

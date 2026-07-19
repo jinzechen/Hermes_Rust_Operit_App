@@ -25,7 +25,7 @@ pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeForegroundSta
 /// Kotlin: `external fun nativeForegroundUpdate(title: String, text: String): Boolean`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeForegroundUpdate<'local>(
-    env: JNIEnv<'local>,
+    mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     title: JString<'local>,
     text: JString<'local>,

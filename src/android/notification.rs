@@ -12,7 +12,7 @@ use jni::JNIEnv;
 /// Kotlin: `external fun nativeNotificationShow(title: String, message: String): Boolean`
 #[no_mangle]
 pub extern "C" fn Java_com_operit_hermes_bridge_HermesBridge_nativeNotificationShow<'local>(
-    env: JNIEnv<'local>,
+    mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     title: JString<'local>,
     message: JString<'local>,
