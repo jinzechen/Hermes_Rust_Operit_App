@@ -66,10 +66,13 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> $GITHUB_ENV
       - name: Build APK
         run: |
+          keytool -genkey -v -keystore debug.keystore -storepass android -keypass android \
+            -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Debug, OU=Hermes, O=Operit, L=Shanghai, ST=Shanghai, C=CN" 2>/dev/null
           cargo install cargo-apk
-          cargo apk build --release --lib
+          cargo apk build --debug --lib
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: hermes-operit-apk
-          path: target/release/apk/*.apk
+          name: hermes-operit-debug-apk
+          path: target/debug/apk/*.apk

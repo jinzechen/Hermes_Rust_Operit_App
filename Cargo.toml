@@ -12,6 +12,12 @@ min_sdk_version = 26
 activity_name = "android.app.NativeActivity"
 features = ["android.hardware.touchscreen"]
 
+[package.metadata.android.signing.debug]
+keystore_path = "debug.keystore"
+keystore_password = "android"
+key_alias = "androiddebugkey"
+key_password = "android"
+
 [lib]
 name = "hermes_operit_core"
 path = "src/lib.rs"
