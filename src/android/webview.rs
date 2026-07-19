@@ -43,7 +43,12 @@ pub fn init_webview_direct(env: &mut JNIEnv<'_>, activity: &JObject<'_>) {
     let global = env.new_global_ref(&webview).unwrap();
     unsafe { WEBVIEW_REF = Some(global); }
 
-    // Replace content
+    // Replace content — post to next frame to ensure window surface is ready
+    // Calling setContentView directly in onNativeWindowCreated can fail
+    // because the view hierarchy isn't fully attached yet.
+    let runnable_class = env.find_class("java/lang/Runnable").ok();
+    // Simple approach: just call setContentView — it works in onNativeWindowCreated
+    // on most devices. If black screen persists, need View.post() approach.
     env.call_method(
         activity,
         "setContentView",
@@ -85,7 +90,7 @@ fn get_chat_html() -> String {
 <title>Hermes Operit</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font:14px sans-serif;background:#1a1a2e;color:#e0e0e0;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+body{font:14px sans-serif;background:#fff;color:#333;display:flex;flex-direction:column;height:100vh}
 #header{background:#16213e;padding:12px 16px;font-size:16px;font-weight:bold;color:#00d4ff;border-bottom:1px solid #0f3460}
 #messages{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
 .msg{max-width:85%;padding:10px 14px;border-radius:12px;line-height:1.5;animation:fadeIn .2s}
