@@ -70,7 +70,7 @@ jobs:
             -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=Debug, OU=Hermes, O=Operit, L=Shanghai, ST=Shanghai, C=CN" 2>/dev/null
           cargo install cargo-apk
-          cargo apk build --debug --lib
+          cargo apk build --lib
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
