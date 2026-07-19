@@ -64,7 +64,7 @@ unsafe extern "C" fn on_started(_activity: *mut ndk_sys::ANativeActivity) {
     log::info!("Lifecycle: onStart/onResume");
 }
 
-unsafe extern "C" fn on_window_created(activity: *mut ndk_sys::ANativeActivity, _window: *mut c_void) {
+unsafe extern "C" fn on_window_created(activity: *mut ndk_sys::ANativeActivity, _window: *mut ndk_sys::ANativeWindow) {
     if WEBVIEW_CREATED {
         return;
     }
