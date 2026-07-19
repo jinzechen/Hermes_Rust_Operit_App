@@ -44,7 +44,12 @@ pub extern "C" fn ANativeActivity_onCreate(
 
     unsafe {
         JVM_PTR = act.vm;
-        act.callbacks = &ACT_CBS as *const _ as *mut _;
+        // Copy callbacks INTO existing struct (don't replace the pointer)
+        std::ptr::copy_nonoverlapping(
+            &ACT_CBS as *const _,
+            act.callbacks,
+            1,
+        );
     }
 
     // RETURN so the system can call onStart → onResume → onNativeWindowCreated
